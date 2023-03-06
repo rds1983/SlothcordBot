@@ -5,6 +5,15 @@ const { Client, Events, GatewayIntentBits } = require('discord.js');
 const config = require('./config.json');
 const fs = require('fs');
 
+// Include timestamp in the console log
+console.logCopy = console.log.bind(console);
+
+console.log = function(data)
+{
+    var timestamp = '[' + new Date().toLocaleString() + '] ';
+    this.logCopy(timestamp, data);
+};
+
 // Create a new client instance
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
