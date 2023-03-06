@@ -1,4 +1,6 @@
 const statusFileName = "status.json";
+const checkIntervalInMs = 5 * 60 * 1000 // 5 minutes
+
 const Discord = require("discord.js")
 const XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
 const { Client, Events, GatewayIntentBits } = require('discord.js');
@@ -57,10 +59,12 @@ client.on("ready", () => {
 	console.log(`Bot channel id: ${channel.id}`);
 
 	// Check groups every minute
-	setInterval(function() {
-	console.log("Checking groups...");
-	loadPage("http://www.slothmud.org/wp/live-info/adventuring-parties", processGroups);
-	}, 60 * 1000); // 60 * 1000 milsec
+	setInterval(
+		function() {
+			console.log("Checking groups...");
+			loadPage("http://www.slothmud.org/wp/live-info/adventuring-parties", processGroups);
+		}, 
+	checkIntervalInMs); 
 })
 
 /* client.on("message", msg => {
