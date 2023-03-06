@@ -1,0 +1,15 @@
+{
+  "name": "slothcordbot",
+  "version": "0.1.0",
+  "description": "Slothcord Bot",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "discord.js": "^14.7.1",
+    "xmlhttprequest": "^1.8.0"
+  }
+}
