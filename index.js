@@ -58,13 +58,11 @@ client.on("ready", () => {
 	channel = client.channels.cache.find(channel => channel.name === "bot-alerts");
 	console.log(`Bot channel id: ${channel.id}`);
 
-	// Check groups every minute
-	setInterval(
-		function() {
-			console.log("Checking groups...");
-			loadPage("http://www.slothmud.org/wp/live-info/adventuring-parties", processGroups);
-		}, 
-	checkIntervalInMs); 
+	// First process right after initialization
+	process();
+	
+	// Further processes every interval
+	setInterval(process, checkIntervalInMs); 
 })
 
 /* client.on("message", msg => {
@@ -73,6 +71,13 @@ client.on("ready", () => {
 })*/
 
 client.login(config.token);
+
+function process()
+{
+	console.log("Checking groups...");
+	loadPage("http://www.slothmud.org/wp/live-info/adventuring-parties", processGroups);
+}
+
 
 function processGroups(data)
 {
