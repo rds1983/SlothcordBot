@@ -93,6 +93,8 @@ function isNumeric(str)
 
 function sendMessage(title, message)
 {
+	logInfo (`${title} -- ${message}`);
+	
 	const embed = new EmbedBuilder().setTitle(title).setDescription(message);
 	channel.send({ embeds: [embed] });
 }
@@ -177,9 +179,6 @@ function processGroups()
 
 function reportNewItem(seller, name, price, buyout)
 {
-	var s = `${seller} has put '${name}' for sale. Price: ${price}. Buyout: ${buyout}`;
-	logInfo (s);
-	
 	var link = `[${name}](http://slothmudeq.ml/?search=${encodeURI(name)})`
 	sendMessage("Item on sale", `${seller} has put '${link}' on sale. Price/Buyout: ${price}/${buyout}`);
 }
