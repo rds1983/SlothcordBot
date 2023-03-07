@@ -1,7 +1,7 @@
 const statusFileName = "status.json";
 const checkIntervalInMs = 5 * 60 * 1000 // 5 minutes
 
-const Discord = require("discord.js")
+const { EmbedBuilder, Discord } = require('discord.js');
 const XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
 const { Client, Events, GatewayIntentBits } = require('discord.js');
 const config = require('./config.json');
@@ -173,7 +173,10 @@ function reportNewItem(seller, name, price, buyout)
 {
 	var s = `${seller} has put '${name}' for sale. Price: ${price}. Buyout: ${buyout}`;
 	logInfo (s);
-	channel.send(`${seller} has put '${name}' for sale. Price: ${price}. Buyout: ${buyout}`);
+	
+	var link = `[${name}](http://slothmudeq.ml/?search=${encodeURI(name)})`
+	const embed = new EmbedBuilder().setDescription(`${seller} has put '${link}' for sale. Price: ${price}. Buyout: ${buyout}`);
+	channel.send({ embeds: [embed] });
 }
 
 function processAuctions()
