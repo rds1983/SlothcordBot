@@ -91,11 +91,11 @@ function isNumeric(str)
          !isNaN(parseFloat(str)) // ...and ensure strings of whitespace fail
 }
 
-function sendMessage(title, message)
+function sendMessage(message)
 {
-	logInfo (`${title} -- ${message}`);
+	logInfo (`${message}`);
 	
-	const embed = new EmbedBuilder().setTitle(title).setDescription(message);
+	const embed = new EmbedBuilder().setDescription(message);
 	channel.send({ embeds: [embed] });
 }
 
@@ -157,7 +157,7 @@ function processGroups()
 	for (var leader in status.groups) 
 	{
 		if (!(leader in newGroups)) {
-			sendMessage ("Group has ended", `${leader}'s group has ended.`)
+			sendMessage (`${leader}'s group has ended.`)
 		}
 	}
 
@@ -167,10 +167,10 @@ function processGroups()
 		var groupName = newGroups[leader];
 		if (!(leader in status.groups))
 		{
-			sendMessage("Group has started", `${leader} has started group '${groupName}'`)
+			sendMessage(`${leader} has started group '${groupName}'`)
 		} else if (status.groups[leader] != newGroups[leader])
 		{
-			sendMessage("Group has been renamed", `${leader} has changed group name to '${groupName}'`)
+			sendMessage(`${leader} has changed group name to '${groupName}'`)
 		}
 	}
 
@@ -180,7 +180,7 @@ function processGroups()
 function reportNewItem(seller, name, price, buyout)
 {
 	var link = `[${name}](http://slothmudeq.ml/?search=${encodeURI(name)})`
-	sendMessage("Item on sale", `${seller} has put '${link}' on sale. Price/Buyout: ${price}/${buyout}`);
+	sendMessage(`${seller} has put '${link}' on sale. Price/Buyout: ${price}/${buyout}`);
 }
 
 function processAuctions()
