@@ -10,6 +10,7 @@
   "license": "MIT",
   "dependencies": {
     "discord.js": "^14.7.1",
+    "jsdom": "^21.1.0",
     "xmlhttprequest": "^1.8.0"
   }
 }
