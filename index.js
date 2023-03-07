@@ -7,15 +7,6 @@ const { Client, Events, GatewayIntentBits } = require('discord.js');
 const config = require('./config.json');
 const fs = require('fs');
 
-// Include timestamp in the console log
-console.logCopy = console.log.bind(console);
-
-console.log = function(data)
-{
-    var timestamp = '[' + new Date().toLocaleString() + '] ';
-    this.logCopy(timestamp, data);
-};
-
 // Create a new client instance
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
@@ -23,16 +14,17 @@ var channel;
 
 var status = {};
 status.groups = {};
+status.actions = {};
 
 if (fs.existsSync(statusFileName))
 {
 	try
 	{
-		console.log("Status file was found.");
+		logInfo("Status file was found.");
 		fs.readFile(statusFileName, 'utf8', function readFileCallback(err, data){
 			if (err)
 			{
-				console.log(err);
+				logInfo(err);
 			} else {
 				try 
 				{
@@ -40,23 +32,23 @@ if (fs.existsSync(statusFileName))
 				}
 				catch (err)
 				{
-					console.log(err);
+					logInfo(err);
 				}
 			}
 		});
 	}
 	catch (err)
 	{
-		console.log(err);
+		logInfo(err);
 	}
 
 }
 
 client.on("ready", () => {
-	console.log(`Logged in as ${client.user.tag}!`);
+	logInfo(`Logged in as ${client.user.tag}!`);
 
 	channel = client.channels.cache.find(channel => channel.name === "bot-alerts");
-	console.log(`Bot channel id: ${channel.id}`);
+	logInfo(`Bot channel id: ${channel.id}`);
 
 	// First process right after initialization
 	process();
@@ -66,21 +58,43 @@ client.on("ready", () => {
 })
 
 /* client.on("message", msg => {
-  console.log('Incoming message ${msg}')
+  logInfo('Incoming message ${msg}')
   msg.reply("pong");
 })*/
 
 client.login(config.token);
 
+function logInfo(info)
+{
+    var timestamp = '[' + new Date().toLocaleString() + '] ';
+    console.log(timestamp, info);	
+}
+
 function process()
 {
-	console.log("Checking groups...");
-	loadPage("http://www.slothmud.org/wp/live-info/adventuring-parties", processGroups);
+	try
+	{
+		processGroups();
+		
+		// Save new status
+		logInfo("Saving new status...");
+		var json = JSON.stringify(status, null, 2);
+		fs.writeFile(statusFileName, json, 'utf8', function(err) { if (err) logInfo(err); });
+
+	}
+	catch (err)
+	{
+		logInfo(err);
+	}
 }
 
 
-function processGroups(data)
+function processGroups()
 {
+	logInfo("Checking groups...");
+
+	var data = loadPage("http://www.slothmud.org/wp/live-info/adventuring-parties");
+
 	var re = /(\w+) is leading '(.*?)' on/g;
 	var m;
 
@@ -92,7 +106,7 @@ function processGroups(data)
 			var groupName = m[2];
 
 			newGroups[leader] = groupName;
-			console.log(`${leader}, ${groupName}`);
+			logInfo(`${leader}, ${groupName}`);
 	  }
 	} while (m);
 
@@ -118,20 +132,19 @@ function processGroups(data)
 	}
 
 	status.groups = newGroups;
-
-	// Save new status
-	var json = JSON.stringify(status, null, 2);
-	fs.writeFile(statusFileName, json, 'utf8', function(err) { if (err) console.log(err); });
 }
 
-function loadPage(url, handler)
+function loadPage(url)
 {
-	qr=new XMLHttpRequest();
-	qr.open('get', url);
-	qr.send();
-	qr.onload=function() 
+	request = new XMLHttpRequest();
+	request.open('get', url, false);
+	request.send();
+	
+	if (request.status != 200)
 	{
-		handler(qr.responseText)
+		throw `Could not fetch '${url}'. Status code: ${request.status}`;
 	}
+	
+	return request.responseText;
 };
 
