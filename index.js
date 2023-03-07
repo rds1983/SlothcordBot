@@ -109,7 +109,7 @@ function process()
 {
 	try
 	{
-		// processGroups();
+		processGroups();
 		processAuctions();
 		
 		// Save new status
