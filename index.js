@@ -227,8 +227,8 @@ function processGroups()
 				sendMessage(channelBotAlerts, `${leader} has changed group name to '${newGroup.name}'`)
 			}
 			
-			var oldSizeDivided = Math.floor(oldGroup.size / 5);
-			var newSizeDivided = Math.floor(newGroup.size / 5);
+			var oldSizeDivided = Math.floor(oldGroup.size / 4);
+			var newSizeDivided = Math.floor(newGroup.size / 4);
 
 			if (newSizeDivided > oldSizeDivided)
 			{
