@@ -12,7 +12,8 @@ const { JSDOM } = jsdom;
 // Create a new client instance
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
-var channel;
+var channelBotAlerts;
+var channelEmporium;
 
 var status = {};
 status.groups = {};
@@ -49,8 +50,8 @@ if (fs.existsSync(statusFileName))
 client.on("ready", () => {
 	logInfo(`Logged in as ${client.user.tag}!`);
 
-	channel = client.channels.cache.find(channel => channel.name === "bot-alerts");
-	logInfo(`Bot channel id: ${channel.id}`);
+	channelBotAlerts = findChannelByName("bot-alerts");
+	channelEmporium = findChannelByName("emporium");
 
 	// First process right after initialization
 	process();
@@ -91,7 +92,15 @@ function isNumeric(str)
          !isNaN(parseFloat(str)) // ...and ensure strings of whitespace fail
 }
 
-function sendMessage(message)
+function findChannelByName(id)
+{
+	var channel = client.channels.cache.find(channel => channel.name === id);
+	logInfo(`Channel #${id}id: ${channel.id}`);
+	
+	return channel;
+}
+
+function sendMessage(channel, message)
 {
 	logInfo (`${message}`);
 	
@@ -157,7 +166,7 @@ function processGroups()
 	for (var leader in status.groups) 
 	{
 		if (!(leader in newGroups)) {
-			sendMessage (`${leader}'s group has ended.`)
+			sendMessage(channelBotAlerts, `${leader}'s group has ended.`)
 		}
 	}
 
@@ -167,10 +176,10 @@ function processGroups()
 		var groupName = newGroups[leader];
 		if (!(leader in status.groups))
 		{
-			sendMessage(`${leader} has started group '${groupName}'`)
+			sendMessage(channelBotAlerts, `${leader} has started group '${groupName}'`)
 		} else if (status.groups[leader] != newGroups[leader])
 		{
-			sendMessage(`${leader} has changed group name to '${groupName}'`)
+			sendMessage(channelBotAlerts, `${leader} has changed group name to '${groupName}'`)
 		}
 	}
 
@@ -180,7 +189,7 @@ function processGroups()
 function reportNewItem(seller, name, price, buyout, ends)
 {
 	var link = `[${name}](http://slothmudeq.ml/?search=${encodeURI(name)})`
-	sendMessage(`${seller} has put '${link}' on sale. Price/Buyout is ${price}/${buyout}. The sale ends in ${ends}.`);
+	sendMessage(channelEmporium, `${seller} has put '${link}' on sale. Price/Buyout is ${price}/${buyout}. The sale ends in ${ends}.`);
 }
 
 function processAuctions()
