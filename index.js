@@ -227,9 +227,9 @@ function processGroups()
 				sendMessage(channelBotAlerts, `${leader} has changed group name to '${newGroup.name}'`)
 			}
 
-			if (newGroup.size > oldGroup.size && newGroup.size >= 5)
+			if (newGroup.size > oldGroup.size && newGroup.size - oldGroup.size >= 2)
 			{
-				sendMessage(channelBotAlerts, `${leader}'s group has became bigger. Now it has 5 or more adventurers.`)
+				sendMessage(channelBotAlerts, `${leader}'s group has became bigger. Now it has ${newGroup.size} adventurers.`)
 			}
 		}
 	}
