@@ -50,8 +50,8 @@ if (fs.existsSync(statusFileName))
 client.on("ready", () => {
 	logInfo(`Logged in as ${client.user.tag}!`);
 
-	channelBotAlerts = findChannelByName("bot-alerts");
-	channelEmporium = findChannelByName("emporium");
+	channelBotAlerts = findChannelByName("bot-groups");
+	channelEmporium = findChannelByName("bot-emporium");
 
 	// First process right after initialization
 	process();
@@ -262,7 +262,7 @@ function reportSoldItem(seller, name, bidder, price)
 
 	if (bidder.toLowerCase() == "nobody")
 	{
-		sendMessage(channelEmporium, `${seller}'s item '${link}' is no longer for sale.`);
+		sendMessage(channelEmporium, `${seller}'s item '${link}' is no longer available for sale.`);
 	} else
 	{
 		sendMessage(channelEmporium, `${seller}'s item '${link}' had been sold to ${bidder} for ${price}.`);
