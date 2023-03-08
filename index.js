@@ -127,7 +127,7 @@ function process()
 	try
 	{
 		processGroups();
-		processAuctions();
+//		processAuctions();
 		
 		// Save new status
 		logInfo("Saving new status...");
@@ -146,40 +146,90 @@ function processGroups()
 	logInfo("Checking groups...");
 
 	var data = loadPage("http://www.slothmud.org/wp/live-info/adventuring-parties");
+	const dom = new JSDOM(data);
+	var document = dom.window.document;
 
-	var re = /(\w+) is leading '(.*?)' on/g;
-	var m;
+	var state = 0;
+	var all = document.getElementsByTagName("tr");
+	var newGroups = {};
+	var group = {};
+	for (var i = 0; i < all.length; i++) 
+	{
+		var children = all[i].childNodes;
+		
+		// Check if it's group header row
+		var td = children[0];
+		if ("colSpan" in td && td.colSpan == "3")
+		{
+			var re = /(\w+) is leading '(.*?)'/;
+			var m = re.exec(td.textContent);
+			if (m)
+			{
+				// Store existing group
+				if (!isEmpty(group))
+				{
+					newGroups[group.leader] = group;
+				}
+				
+				group.leader = m[1];
+				group.name = m[2];
+				group.size = 0;
 
-	var newGroups = {}
-	do {
-		m = re.exec(data);
-		if (m) {
-			var leader = m[1];
-			var groupName = m[2];
-
-			newGroups[leader] = groupName;
-			logInfo(`${leader}, ${groupName}`);
+				continue;
+			}
 		}
-	} while (m);
+		
+		if (isEmpty(group))
+		{
+			continue;
+		}
+		
+		if (children.length == 3)
+		{
+			// Member row
+			++group.size;
+		}
+	}
+	
+	// Store last group
+	// Store existing group
+	if (!isEmpty(group))
+	{
+		newGroups[group.leader] = group;
+	}
+	
+	// Log groups
+	for (var leader in newGroups)
+	{
+		logInfo(newGroups[leader]);
+	}
 
 	// Check for ended groups
 	for (var leader in status.groups) 
 	{
 		if (!(leader in newGroups)) {
-			sendMessage(channelBotAlerts, `${leader}'s group has ended.`)
+			sendMessage(channelBotAlerts, `${leader}'s group is over.`)
 		}
 	}
 
 	// Check for new and renamed groups
 	for (var leader in newGroups)
 	{
-		var groupName = newGroups[leader];
+		var newGroup = newGroups[leader];
 		if (!(leader in status.groups))
 		{
-			sendMessage(channelBotAlerts, `${leader} has started group '${groupName}'`)
-		} else if (status.groups[leader] != newGroups[leader])
-		{
-			sendMessage(channelBotAlerts, `${leader} has changed group name to '${groupName}'`)
+			sendMessage(channelBotAlerts, `${leader} has started group '${newGroup.name}'. Group consists of ${newGroup.size} adventurers.`)
+		} else {
+			var oldGroup = status.groups[leader];
+			if (oldGroup.name != newGroup.name)
+			{
+				sendMessage(channelBotAlerts, `${leader} has changed group name to '${newGroup.name}'`)
+			}
+
+			if (newGroup.size > oldGroup.size && newGroup.size >= 5)
+			{
+				sendMessage(channelBotAlerts, `${leader}'s group has became bigger. Now it has 5 or more adventurers.`)
+			}
 		}
 	}
 
