@@ -245,16 +245,21 @@ function processGroups()
 	status.groups = newGroups;
 }
 
+function buildItemLink(name)
+{
+	return `[${name}](http://slothmudeq.ml/?search=${encodeURI(name)})`;
+}
+
 function reportNewItem(seller, name, price, buyout, ends)
 {
-	var link = `[${name}](http://slothmudeq.ml/?search=${encodeURI(name)})`
+	var link = buildItemLink(name);
 	sendMessage(channelEmporium, `${seller} has put '${link}' on sale. Price/buyout is ${price}/${buyout}. The sale ends in ${ends}.`);
 }
 
 function reportSoldItem(seller, name, bidder, price)
 {
-	var link = `[${name}](http://slothmudeq.ml/?search=${encodeURI(name)})`
-	
+	var link = buildItemLink(name);
+
 	if (bidder.toLowerCase() == "nobody")
 	{
 		sendMessage(channelEmporium, `${seller}'s item '${link}' is no longer for sale.`);
@@ -262,6 +267,45 @@ function reportSoldItem(seller, name, bidder, price)
 	{
 		sendMessage(channelEmporium, `${seller}'s item '${link}' had been sold to ${bidder} for ${price}.`);
 	}
+}
+
+function convertEndsToMinutes(ends)
+{
+	var minutesLeft = 0;
+
+	try
+	{
+		var parts = ends.split(' ');
+		for(var j = 0; j < parts.length; ++j)
+		{
+			var part = parts[j].trim();
+			var re = /(\d+)(\w)/;
+			var m = re.exec(part);
+			if (m)
+			{
+				var value = parseInt(m[1]);
+				if (m[2] == "d")
+				{
+					minutesLeft += 24 * 60 * value;
+				} else if (m[2] == "h")
+				{
+					minutesLeft += 60 * value;
+				} else if (m[2] == "m")
+				{
+					minutesLeft += value;
+				}
+				
+			}
+		}
+		
+		return minutesLeft;
+	}
+	catch (err)
+	{
+		logInfo(err);
+	}
+	
+	return 0;
 }
 
 
@@ -300,14 +344,15 @@ function processAuctions()
 		var buyout = children[5].textContent.trim();
 		var ends = children[6].textContent.trim();
 		logInfo(`${id}, ${name}, ${seller}, ${price}, ${buyout}, ${ends}`);
-		
+
 		var item =
 		{
 			name: name,
 			bidder: bidder,
 			price: price,
 			buyout: buyout,
-			ends: ends
+			ends: ends,
+			lastWarning: false
 		};
 		
 		var sellerData;
@@ -366,6 +411,11 @@ function processAuctions()
 							// Mark item as same in both lists
 							newDataSameIndices[i] = true;
 							oldDataSameIndices[j] = true;
+							
+							if ("lastWarning" in oldItem)
+							{
+								newItem.lastWarning = oldItem.lastWarning;
+							}
 							break;
 						}
 					}
@@ -374,13 +424,22 @@ function processAuctions()
 				// Report remaining new items as put on sale
 				for (var i = 0; i < newData.length; ++i)
 				{
+					// Last warning
+					var item = newData[i];
+
+					var minutesLeft = convertEndsToMinutes(item.ends);
+					if (minutesLeft > 0 && minutesLeft <= 120 && !item.lastWarning)
+					{
+						var link = buildItemLink(item.name);
+						sendMessage(channelEmporium, `The auction for ${seller}'s item '${link}' will end in less than two hours.`);
+						item.lastWarning = true;
+					}
+					
 					if (i in newDataSameIndices)
 					{
 						continue;
 					}
-					
-					var item = newData[i];
-					
+
 					reportNewItem(seller, item.name, item.price, item.buyout, item.ends);
 				}
 				
@@ -395,7 +454,6 @@ function processAuctions()
 					var item = oldData[i];
 					reportSoldItem(seller, item.name, item.bidder, item.price);
 				}
-				
 			}
 		}
 		
