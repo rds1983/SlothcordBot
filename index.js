@@ -242,6 +242,20 @@ function reportNewItem(seller, name, price, buyout, ends)
 	sendMessage(channelEmporium, `${seller} has put '${link}' on sale. Price/buyout is ${price}/${buyout}. The sale ends in ${ends}.`);
 }
 
+function reportSoldItem(seller, name, bidder, price)
+{
+	var link = `[${name}](http://slothmudeq.ml/?search=${encodeURI(name)})`
+	
+	if (bidder.toLowerCase() == "nobody")
+	{
+		sendMessage(channelEmporium, `${seller}'s item '${link}' is no longer for sale.`);
+	} else
+	{
+		sendMessage(channelEmporium, `${seller}'s item '${link}' had been sold to ${bidder} for ${price}.`);
+	}
+}
+
+
 function processAuctions()
 {
 	logInfo("Checking auctions...");
@@ -272,6 +286,7 @@ function processAuctions()
 		
 		var name = children[1].textContent.trim();
 		var seller = children[2].textContent.trim();
+		var bidder = children[3].textContent.trim();
 		var price = children[4].textContent.trim();
 		var buyout = children[5].textContent.trim();
 		var ends = children[6].textContent.trim();
@@ -280,6 +295,7 @@ function processAuctions()
 		var item =
 		{
 			name: name,
+			bidder: bidder,
 			price: price,
 			buyout: buyout,
 			ends: ends
@@ -346,7 +362,7 @@ function processAuctions()
 					}
 				}
 
-				// Now report remaining ones
+				// Report remaining new items as put on sale
 				for (var i = 0; i < newData.length; ++i)
 				{
 					if (i in newDataSameIndices)
@@ -357,6 +373,33 @@ function processAuctions()
 					var item = newData[i];
 					
 					reportNewItem(seller, item.name, item.price, item.buyout, item.ends);
+				}
+				
+				// Report remainng old items as sold
+				for (var i = 0; i < oldData.length; ++i)
+				{
+					if (i in oldDataSameIndices)
+					{
+						continue;
+					}
+					
+					var item = oldData[i];
+					reportSoldItem(seller, item.name, item.bidder, item.price);
+				}
+				
+			}
+		}
+		
+		// Report items of disappeared sellers as sold
+		for (var seller in status.auctions)
+		{
+			if (!(seller in newAuctions))
+			{
+				var items = status.auctions[seller];
+				for (var i = 0; i < items.length; ++i)
+				{
+					var item = items[i];
+					reportSoldItem(seller, item.name, item.bidder, item.price);
 				}
 			}
 		}
