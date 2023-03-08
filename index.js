@@ -231,6 +231,11 @@ function processGroups()
 			{
 				sendMessage(channelBotAlerts, `${leader}'s group has became bigger. Now it has ${newGroup.size} adventurers.`)
 			}
+			
+			if (newGroup.size < oldGroup.size && oldGroup.size - newGroup.size <= 2)
+			{
+				sendMessage(channelBotAlerts, `${leader}'s group has became smaller. Now it has ${newGroup.size} adventurers.`)
+			}
 		}
 	}
 
