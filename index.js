@@ -95,7 +95,7 @@ function isNumeric(str)
 function findChannelByName(id)
 {
 	var channel = client.channels.cache.find(channel => channel.name === id);
-	logInfo(`Channel #${id}id: ${channel.id}`);
+	logInfo(`Channel #${id}'s id: ${channel.id}`);
 	
 	return channel;
 }
@@ -189,7 +189,7 @@ function processGroups()
 function reportNewItem(seller, name, price, buyout, ends)
 {
 	var link = `[${name}](http://slothmudeq.ml/?search=${encodeURI(name)})`
-	sendMessage(channelEmporium, `${seller} has put '${link}' on sale. Price/Buyout is ${price}/${buyout}. The sale ends in ${ends}.`);
+	sendMessage(channelEmporium, `${seller} has put '${link}' on sale. Price/buyout is ${price}/${buyout}. The sale ends in ${ends}.`);
 }
 
 function processAuctions()
