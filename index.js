@@ -127,8 +127,8 @@ function process()
 	try
 	{
 		processGroups();
-//		processAuctions();
-		
+		processAuctions();
+
 		// Save new status
 		logInfo("Saving new status...");
 		var json = JSON.stringify(status, null, 2);
