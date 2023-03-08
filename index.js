@@ -226,13 +226,16 @@ function processGroups()
 			{
 				sendMessage(channelBotAlerts, `${leader} has changed group name to '${newGroup.name}'`)
 			}
+			
+			var oldSizeDivided = Math.floor(oldGroup.size / 5);
+			var newSizeDivided = Math.floor(newGroup.size / 5);
 
-			if (newGroup.size > oldGroup.size && newGroup.size - oldGroup.size >= 2)
+			if (newSizeDivided > oldSizeDivided)
 			{
 				sendMessage(channelBotAlerts, `${leader}'s group has became bigger. Now it has ${newGroup.size} adventurers.`)
 			}
 			
-			if (newGroup.size < oldGroup.size && oldGroup.size - newGroup.size <= 2)
+			if (newSizeDivided < oldSizeDivided)
 			{
 				sendMessage(channelBotAlerts, `${leader}'s group has became smaller. Now it has ${newGroup.size} adventurers.`)
 			}
