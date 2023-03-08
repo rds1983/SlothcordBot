@@ -177,10 +177,10 @@ function processGroups()
 	status.groups = newGroups;
 }
 
-function reportNewItem(seller, name, price, buyout)
+function reportNewItem(seller, name, price, buyout, ends)
 {
 	var link = `[${name}](http://slothmudeq.ml/?search=${encodeURI(name)})`
-	sendMessage(`${seller} has put '${link}' on sale. Price/Buyout: ${price}/${buyout}`);
+	sendMessage(`${seller} has put '${link}' on sale. Price/Buyout is ${price}/${buyout}. The sale ends in ${ends}.`);
 }
 
 function processAuctions()
@@ -211,17 +211,19 @@ function processAuctions()
 			continue;
 		}
 		
-		var name = children[1].textContent;
-		var seller = children[2].textContent;
-		var price = children[4].textContent;
-		var buyout = children[5].textContent;
-		logInfo(`${id}, ${name}, ${seller}, ${price}, ${buyout}`);
+		var name = children[1].textContent.trim();
+		var seller = children[2].textContent.trim();
+		var price = children[4].textContent.trim();
+		var buyout = children[5].textContent.trim();
+		var ends = children[6].textContent.trim();
+		logInfo(`${id}, ${name}, ${seller}, ${price}, ${buyout}, ${ends}`);
 		
 		var item =
 		{
 			name: name,
 			price: price,
-			buyout: buyout
+			buyout: buyout,
+			ends: ends
 		};
 		
 		var sellerData;
@@ -295,7 +297,7 @@ function processAuctions()
 					
 					var item = newData[i];
 					
-					reportNewItem(seller, item.name, item.price, item.buyout);
+					reportNewItem(seller, item.name, item.price, item.buyout, item.ends);
 				}
 			}
 		}
