@@ -152,7 +152,7 @@ function processGroups()
 	var state = 0;
 	var all = document.getElementsByTagName("tr");
 	var newGroups = {};
-	var group = {};
+	var group = null;
 	for (var i = 0; i < all.length; i++) 
 	{
 		var children = all[i].childNodes;
@@ -161,16 +161,17 @@ function processGroups()
 		var td = children[0];
 		if ("colSpan" in td && td.colSpan == "3")
 		{
-			var re = /(\w+) is leading '(.*?)'/;
+			var re = /(\w+) is leading '(.*)' on/;
 			var m = re.exec(td.textContent);
 			if (m)
 			{
-				// Store existing group
-				if (!isEmpty(group))
+				// Store last group
+				if (group != null)
 				{
 					newGroups[group.leader] = group;
 				}
 				
+				group = {};
 				group.leader = m[1];
 				group.name = m[2];
 				group.size = 0;
@@ -179,7 +180,7 @@ function processGroups()
 			}
 		}
 		
-		if (isEmpty(group))
+		if (group == null)
 		{
 			continue;
 		}
@@ -193,7 +194,7 @@ function processGroups()
 	
 	// Store last group
 	// Store existing group
-	if (!isEmpty(group))
+	if (group != null)
 	{
 		newGroups[group.leader] = group;
 	}
