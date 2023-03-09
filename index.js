@@ -14,10 +14,12 @@ const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
 var channelBotAlerts;
 var channelEmporium;
+var channelEpics;
 
 var status = {};
 status.groups = {};
 status.auctions = {};
+status.epics = [];
 
 if (fs.existsSync(statusFileName))
 {
@@ -52,6 +54,7 @@ client.on("ready", () => {
 
 	channelBotAlerts = findChannelByName("bot-groups");
 	channelEmporium = findChannelByName("bot-emporium");
+	channelEpics = findChannelByName("bot-epics");
 
 	// First process right after initialization
 	process();
@@ -128,6 +131,7 @@ function process()
 	{
 		processGroups();
 		processAuctions();
+		processEpics();
 
 		// Save new status
 		logInfo("Saving new status...");
@@ -294,7 +298,6 @@ function convertEndsToMinutes(ends)
 				{
 					minutesLeft += value;
 				}
-				
 			}
 		}
 		
@@ -322,7 +325,7 @@ function processAuctions()
 
 	var count = 0;
 	var newAuctions = {};
-	for (var i=0, max=all.length; i < max; i++) 
+	for (var i=0; i < all.length; i++) 
 	{
 		var children = all[i].childNodes;
 
@@ -476,4 +479,101 @@ function processAuctions()
 	}
 
 	status.auctions = newAuctions;
+}
+
+function processEpics()
+{
+	logInfo("Checking epics...");
+
+	var data = loadPage("http://www.slothmud.org/support/mapserver2.php?filter=all");
+	const dom = new JSDOM(data);
+	var document = dom.window.document;
+
+	var newEpics = [];
+	var all = document.getElementsByTagName("div");
+	for (var i=0; i < all.length; i++) 
+	{
+		var div = all[i];
+
+		var area = div.getAttribute("area");
+		var continent = div.getAttribute("continent");
+
+		if (area == null || continent == null)
+		{
+			continue;
+		}
+
+		// Filter out non real epics
+		if (continent.toLowerCase() == "godsland")
+		{
+			continue;
+		}
+		
+		if (continent.toLowerCase() == "valkyre" && !area.toLowerCase().startsWith("dark"))
+		{
+			continue;
+		}
+
+		var name = div.textContent;
+		
+		logInfo(`${name}; ${area}; ${continent}`);
+		
+		var epic =
+		{
+			name: name,
+			area: area,
+			continent: continent
+		}
+		
+		newEpics.push(epic);
+	}
+
+	if ("epics" in status)
+	{
+		// Report new epics
+		for (var i = 0; i < newEpics.length; ++i)
+		{
+			var newEpic = newEpics[i];
+			var found = false;
+			for (var j = 0; j < status.epics.length; ++j)
+			{
+				var oldEpic = status.epics[j];
+				
+				if (newEpic.name == oldEpic.name)
+				{
+					found = true;
+					break;
+				}
+			}
+			
+			if (!found)
+			{
+				sendMessage(channelEpics, `${newEpic.name} has appeared in ${newEpic.area} at ${newEpic.continent}.`);
+			}
+		}
+
+		// Report killed epics
+		for (var i = 0; i < status.epics.length; ++i)
+		{
+			var oldEpic = status.epics[i];
+			var found = false;
+			for (var j = 0; j < newEpics.length; ++j)
+			{
+				var newEpic = newEpics[j];
+				
+				if (newEpic.name == oldEpic.name)
+				{
+					found = true;
+					break;
+				}
+			}
+			
+			if (!found)
+			{
+				sendMessage(channelEpics, `${oldEpic.name} is no more.`);
+			}
+		}
+	}
+
+	status.epics = newEpics;
 }
