@@ -18,7 +18,7 @@ const client = new Client({
 	]
 });
 
-var channelBotAlerts;
+var channelGroups;
 var channelEmporium;
 var channelEpics;
 
@@ -58,7 +58,7 @@ if (fs.existsSync(statusFileName))
 client.on("ready", () => {
 	logInfo(`Logged in as ${client.user.tag}!`);
 
-	channelBotAlerts = findChannelByName("bot-groups");
+	channelGroups = findChannelByName("bot-groups");
 	channelEmporium = findChannelByName("bot-emporium");
 	channelEpics = findChannelByName("bot-epics");
 
@@ -146,7 +146,32 @@ function sendMessage(channel, message)
 	logInfo (`${message}`);
 	
 	const embed = new EmbedBuilder().setDescription(message);
-	channel.send({ embeds: [embed] });
+	return channel.send({ embeds: [embed] });
+}
+
+function makeChannelWhite(channel)
+{
+	// Post and delete something just to make the channel white
+	channel.send("something").then(msg => {
+		msg.delete();	
+	});
+}
+
+function appendMessage(channel, messageId, append)
+{
+	channel.messages.fetch(messageId).then(message => 
+	{
+	  var embed = message.embeds[0];
+
+	  var desc = embed.description;
+	  desc += "\n";
+	  desc += append;
+
+	  const newEmbed = new EmbedBuilder().setDescription(desc);
+
+	  message.edit({embeds:[newEmbed]});
+	  makeChannelWhite(channel);
+  	}).catch(logInfo);
 }
 
 function loadPage(url)
@@ -163,11 +188,11 @@ function loadPage(url)
 	return request.responseText;
 };
 
-function process()
+async function process()
 {
 	try
 	{
-		processGroups();
+		await processGroups();
 		processAuctions();
 		processEpics();
 
@@ -183,7 +208,7 @@ function process()
 	}
 }
 
-function processGroups()
+async function processGroups()
 {
 	logInfo("Checking groups...");
 
@@ -251,7 +276,7 @@ function processGroups()
 	for (var leader in status.groups) 
 	{
 		if (!(leader in newGroups)) {
-			sendMessage(channelBotAlerts, `${leader}'s group is over.`)
+			sendMessage(channelGroups, `${leader}'s group is over.`)
 		}
 	}
 
@@ -261,12 +286,32 @@ function processGroups()
 		var newGroup = newGroups[leader];
 		if (!(leader in status.groups))
 		{
-			sendMessage(channelBotAlerts, `${leader} has started group '${newGroup.name}'. Group consists of ${newGroup.size} adventurers.`)
+			var msg = await sendMessage(channelGroups, `${leader} has started group '${newGroup.name}'. Group consists of ${newGroup.size} adventurers.`)
+
+			newGroup.messageId = msg.id;
+			newGroup.started = new Date();
 		} else {
 			var oldGroup = status.groups[leader];
+
+			if ("messageId" in oldGroup)
+			{
+				newGroup.messageId = oldGroup.messageId;
+			}
+
+			if ("started" in oldGroup)
+			{
+				newGroup.started = oldGroup.started;
+			}
+
 			if (oldGroup.name != newGroup.name)
 			{
-				sendMessage(channelBotAlerts, `${leader} has changed group name to '${newGroup.name}'`)
+				if ("messageId" in oldGroup)
+				{
+					appendMessage(channelGroups, oldGroup.messageId, `${leader} has changed group name to '${newGroup.name}'`);
+				} else
+				{
+					sendMessage(channelGroups, `${leader} has changed group name to '${newGroup.name}'`);
+				}
 			}
 			
 			var oldSizeDivided = Math.floor(oldGroup.size / 4);
@@ -274,12 +319,24 @@ function processGroups()
 
 			if (newSizeDivided > oldSizeDivided)
 			{
-				sendMessage(channelBotAlerts, `${leader}'s group has became bigger. Now it has ${newGroup.size} adventurers.`)
+				if ("messageId" in oldGroup)
+				{
+					appendMessage(channelGroups, oldGroup.messageId, `The group has became bigger. Now it has as many as ${newGroup.size} adventurers.`);
+				} else
+				{
+					sendMessage(channelGroups, `${leader}'s group has became bigger. Now it has as many as ${newGroup.size} adventurers.`)
+				}
 			}
 			
 			if (newSizeDivided < oldSizeDivided)
 			{
-				sendMessage(channelBotAlerts, `${leader}'s group has became smaller. Now it has ${newGroup.size} adventurers.`)
+				if ("messageId" in oldGroup)
+				{
+					appendMessage(channelGroups, oldGroup.messageId, `The group has became smaller. Now it has only ${newGroup.size} adventurers.`);
+				} else
+				{
+					sendMessage(channelGroups, `${leader}'s group has became smaller. Now it has ${newGroup.size} adventurers.`);					
+				}
 			}
 		}
 	}
@@ -641,10 +698,7 @@ function processEpics()
 				var message = messagesArray[0];
 				message.edit({embeds:[embed]});
 
-				// Post and delete something just to make the channel white
-				channelEpics.send("something").then(msg => {
-					msg.delete();	
-				});
+				makeChannelWhite(channelEpics);
 			}
 		});
 	}
