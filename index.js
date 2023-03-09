@@ -566,6 +566,7 @@ function processEpics()
 		newEpics.push(epic);
 	}
 
+	var changed = false;
 	if ("epics" in status)
 	{
 		// Report new epics
@@ -586,7 +587,7 @@ function processEpics()
 			
 			if (!found)
 			{
-				sendMessage(channelEpics, `${newEpic.name} has appeared in ${newEpic.area} at ${newEpic.continent}.`);
+				changed = true;
 			}
 		}
 
@@ -608,9 +609,41 @@ function processEpics()
 			
 			if (!found)
 			{
-				sendMessage(channelEpics, `${oldEpic.name} is no more.`);
+				changed = true;
 			}
 		}
+	}
+
+	if (changed)
+	{
+		var result = "";
+		for (var i = 0; i < status.epics.length; ++i)
+		{
+			var epic = status.epics[i];
+			result += `${i + 1}. ${epic.name} in ${epic.area} at ${epic.continent}\n`;
+		}
+
+		var messages = channelEpics.messages.fetch().then(messages => {
+			var messagesArray = Array.from(messages.values());
+
+			if (messagesArray.length == 0)
+			{
+				// Post new message
+				sendMessage(channelEpics, result);		
+			} else
+			{
+				// Edit existing
+				const embed = new EmbedBuilder().setDescription(result);
+
+				var message = messagesArray[0];
+				message.edit({embeds:[embed]});
+
+				// Post and delete something just to make the channel white
+				channelEpics.send("something").then(msg => {
+					msg.delete();	
+				});
+			}
+		});
 	}
 
 	status.epics = newEpics;
