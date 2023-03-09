@@ -3,14 +3,20 @@ const checkIntervalInMs = 5 * 60 * 1000 // 5 minutes
 
 const { EmbedBuilder, Discord } = require('discord.js');
 const XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
-const { Client, Events, GatewayIntentBits } = require('discord.js');
+const { Client, GatewayIntentBits } = require('discord.js');
 const config = require('./config.json');
 const fs = require('fs');
 const jsdom = require("jsdom");
 const { JSDOM } = jsdom;
 
 // Create a new client instance
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+const client = new Client({
+	intents: [
+		GatewayIntentBits.Guilds,
+		GatewayIntentBits.GuildMessages,
+		GatewayIntentBits.MessageContent,
+	]
+});
 
 var channelBotAlerts;
 var channelEmporium;
@@ -61,12 +67,44 @@ client.on("ready", () => {
 	
 	// Further processes every interval
 	setInterval(process, checkIntervalInMs); 
-})
+});
 
-/* client.on("message", msg => {
-  logInfo('Incoming message ${msg}')
-  msg.reply("pong");
-})*/
+client.on('messageCreate', msg => {
+	if (msg.author.bot)
+	{
+		// Ignore bot messages
+		return;
+	}
+
+	var content = msg.content;
+	if (!content.startsWith("!"))
+	{
+		// Not a command
+		return;
+	}
+
+	try {
+	var command = msg.content.substring(1);
+	logInfo(`Command: ${command}`);
+
+	if (command == "epics")
+	{
+		var result = "";
+		for (var i = 0; i < status.epics.length; ++i)
+		{
+			var epic = status.epics[i];
+			result += `${epic.name}/${epic.area}/${epic.continent}\n`;
+		}
+
+		sendMessage(msg.channel, result);
+	}
+	}
+	catch(err)
+	{
+		logInfo(err);
+	}
+});
+
 
 client.login(config.token);
 
