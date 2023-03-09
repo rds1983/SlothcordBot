@@ -269,7 +269,23 @@ async function processGroups()
 	// Log groups
 	for (var leader in newGroups)
 	{
-		logInfo(newGroups[leader]);
+		var newGroup = newGroups[leader];
+		if (leader in status.groups)
+		{
+			var oldGroup = status.groups[leader];
+
+			if ("messageId" in oldGroup)
+			{
+				newGroup.messageId = oldGroup.messageId;
+			}
+
+			if ("started" in oldGroup)
+			{
+				newGroup.started = oldGroup.started;
+			}
+		}
+
+		logInfo(newGroup);
 	}
 
 	// Check for ended groups
@@ -290,18 +306,9 @@ async function processGroups()
 
 			newGroup.messageId = msg.id;
 			newGroup.started = new Date();
+			logInfo(newGroup);
 		} else {
 			var oldGroup = status.groups[leader];
-
-			if ("messageId" in oldGroup)
-			{
-				newGroup.messageId = oldGroup.messageId;
-			}
-
-			if ("started" in oldGroup)
-			{
-				newGroup.started = oldGroup.started;
-			}
 
 			if (oldGroup.name != newGroup.name)
 			{
