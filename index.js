@@ -612,6 +612,9 @@ function processEpics()
 				changed = true;
 			}
 		}
+	} else
+	{
+		changed = true;
 	}
 
 	if (changed)
