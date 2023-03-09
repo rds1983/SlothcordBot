@@ -620,9 +620,9 @@ function processEpics()
 	if (changed)
 	{
 		var result = "";
-		for (var i = 0; i < status.epics.length; ++i)
+		for (var i = 0; i < newEpics.length; ++i)
 		{
-			var epic = status.epics[i];
+			var epic = newEpics[i];
 			result += `${i + 1}. ${epic.name} in ${epic.area} at ${epic.continent}\n`;
 		}
 
