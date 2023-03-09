@@ -93,7 +93,7 @@ client.on('messageCreate', msg => {
 		for (var i = 0; i < status.epics.length; ++i)
 		{
 			var epic = status.epics[i];
-			result += `${epic.name}/${epic.area}/${epic.continent}\n`;
+			result += `${i + 1}. ${epic.name}/${epic.area}/${epic.continent}\n`;
 		}
 
 		sendMessage(msg.channel, result);
