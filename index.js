@@ -157,14 +157,23 @@ function makeChannelWhite(channel)
 	});
 }
 
-function appendMessage(channel, messageId, append)
+function appendMessage(channel, messageId, started, append)
 {
 	channel.messages.fetch(messageId).then(message => 
 	{
 	  var embed = message.embeds[0];
 
+	  var s = parseInt(started);
+	  var diff = new Date().getTime() - s;
+	  var hours = Math.floor(diff / (1000 * 60 * 60));
+	  diff -= hours * (1000 * 60 * 60);
+	  
+	  var mins = Math.floor(diff / (1000 * 60));
+	  diff -= mins * (1000 * 60);
+
 	  var desc = embed.description;
 	  desc += "\n";
+	  desc += `(+${hours}:${mins}) `;
 	  desc += append;
 
 	  const newEmbed = new EmbedBuilder().setDescription(desc);
@@ -296,7 +305,7 @@ async function processGroups()
 		{
 			if ("messageId" in oldGroup)
 			{
-				appendMessage(channelGroups, oldGroup.messageId, `The group is over.`);
+				appendMessage(channelGroups, oldGroup.messageId, oldGroup.started, `The group is over.`);
 			} else
 			{
 				sendMessage(channelGroups, `${leader}'s group is over.`)
@@ -314,7 +323,7 @@ async function processGroups()
 			var msg = await sendMessage(channelGroups, `${leader} has started group '${newGroup.name}'. Group consists of ${newGroup.size} adventurers.`)
 
 			newGroup.messageId = msg.id;
-			newGroup.started = new Date();
+			newGroup.started = new Date().getTime();
 			logInfo(newGroup);
 		} else {
 			var oldGroup = status.groups[leader];
@@ -323,7 +332,7 @@ async function processGroups()
 			{
 				if ("messageId" in oldGroup)
 				{
-					appendMessage(channelGroups, oldGroup.messageId, `${leader} has changed group name to '${newGroup.name}'`);
+					appendMessage(channelGroups, oldGroup.messageId, oldGroup.started, `${leader} has changed group name to '${newGroup.name}'`);
 				} else
 				{
 					sendMessage(channelGroups, `${leader} has changed group name to '${newGroup.name}'`);
@@ -337,7 +346,7 @@ async function processGroups()
 			{
 				if ("messageId" in oldGroup)
 				{
-					appendMessage(channelGroups, oldGroup.messageId, `The group has became bigger. Now it has as many as ${newGroup.size} adventurers.`);
+					appendMessage(channelGroups, oldGroup.messageId, oldGroup.started, `The group has became bigger. Now it has as many as ${newGroup.size} adventurers.`);
 				} else
 				{
 					sendMessage(channelGroups, `${leader}'s group has became bigger. Now it has as many as ${newGroup.size} adventurers.`)
@@ -348,7 +357,7 @@ async function processGroups()
 			{
 				if ("messageId" in oldGroup)
 				{
-					appendMessage(channelGroups, oldGroup.messageId, `The group has became smaller. Now it has only ${newGroup.size} adventurers.`);
+					appendMessage(channelGroups, oldGroup.messageId, oldGroup.started, `The group has became smaller. Now it has only ${newGroup.size} adventurers.`);
 				} else
 				{
 					sendMessage(channelGroups, `${leader}'s group has became smaller. Now it has ${newGroup.size} adventurers.`);					
