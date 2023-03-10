@@ -157,6 +157,18 @@ function makeChannelWhite(channel)
 	});
 }
 
+function formatTwoDigits(num)
+{
+	var result = `${num}`;
+
+	if (num < 10)
+	{
+		result = '0' + result;
+	}
+
+	return result;
+}
+
 function appendMessage(channel, messageId, started, append)
 {
 	channel.messages.fetch(messageId).then(message => 
@@ -173,7 +185,7 @@ function appendMessage(channel, messageId, started, append)
 
 	  var desc = embed.description;
 	  desc += "\n";
-	  desc += `(+${hours}:${mins}) `;
+	  desc += `(+${formatTwoDigits(hours)}:${formatTwoDigits(mins)}) `;
 	  desc += append;
 
 	  const newEmbed = new EmbedBuilder().setDescription(desc);
