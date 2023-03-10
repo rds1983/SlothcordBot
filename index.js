@@ -291,8 +291,17 @@ async function processGroups()
 	// Check for ended groups
 	for (var leader in status.groups) 
 	{
-		if (!(leader in newGroups)) {
-			sendMessage(channelGroups, `${leader}'s group is over.`)
+		var oldGroup = status.groups[leader];
+		if (!(leader in newGroups)) 
+		{
+			if ("messageId" in oldGroup)
+			{
+				appendMessage(channelGroups, oldGroup.messageId, `The group is over.`);
+			} else
+			{
+				sendMessage(channelGroups, `${leader}'s group is over.`)
+			}
+
 		}
 	}
 
