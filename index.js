@@ -61,6 +61,7 @@ client.on("ready", () => {
 	channelGroups = findChannelByName("bot-groups");
 	channelEmporium = findChannelByName("bot-emporium");
 	channelEpics = findChannelByName("bot-epics");
+	channelForum = findChannelByName("bot-forum");
 
 	// First process right after initialization
 	process();
@@ -216,6 +217,7 @@ async function process()
 		await processGroups();
 		processAuctions();
 		processEpics();
+		processForum();
 
 		// Save new status
 		logInfo("Saving new status...");
@@ -740,4 +742,87 @@ function processEpics()
 	}
 
 	status.epics = newEpics;
+}
+
+function processForum()
+{
+	logInfo("Checking forum...");
+
+	var data = loadPage("http://www.slothmud.org/wp/");
+	const dom = new JSDOM(data);
+	var document = dom.window.document;
+
+	var all = document.getElementsByTagName("tr");
+	var foundHeader = false;
+
+	var newPosts = [];
+	for (var i = 0; i < all.length; i++) 
+	{
+		var children = all[i].childNodes;
+		
+		if (children.length < 1)
+		{
+			continue;
+		}
+		
+		// Check if it's group header row
+		var td = children[0];
+
+		if (!foundHeader)
+		{
+			if (td.textContent.includes("Last Forum Posts"))
+			{
+				foundHeader = true;
+				logInfo("found header");
+			}
+		} else
+		{
+			if (children.length == 4)
+			{
+				var threadName = children[0].textContent.trim();
+				var threadLink = children[0].children[0].href;
+				var poster = children[1].textContent.trim();
+				var posterLink = children[1].children[0].href;
+
+				var newPost = 
+				{
+					threadName: threadName,
+					threadLink: threadLink,
+					poster: poster,
+					posterLink: posterLink
+				};
+
+				newPosts.push(newPost);
+
+				logInfo(`${threadName}/${threadLink}/${poster}/${posterLink}`);
+			}
+		}
+	}
+
+	if ("posts" in status && status.posts.length > 0)
+	{
+		var oldTopPost = status.posts[0];
+		var oldTopPostIndex = 0;
+		for (var i = 0; i < newPosts.length; ++i)
+		{
+			var newPost = newPosts[i];
+			if (newPost.threadName == oldTopPost.threadName &&
+				newPost.poster == oldTopPost.poster)
+			{
+				oldTopPostIndex = i;
+				break;
+			}
+		}
+
+		// All posts before oldTopPostIndex are new
+		for (var i = 0; i < oldTopPostIndex; ++i)
+		{
+			var newPost = newPosts[i];
+			sendMessage(channelForum, `[${newPost.poster}](${newPost.posterLink}) made a new post in the thread '[${newPost.threadName}](${newPost.threadLink})'`);
+
+		}
+	}
+
+	status.posts = newPosts;
+
 }
