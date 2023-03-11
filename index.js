@@ -249,7 +249,7 @@ async function processGroups()
 		var td = children[0];
 		if ("colSpan" in td && td.colSpan == "3")
 		{
-			var re = /(\w+) is leading '(.*)' on/;
+			var re = /(\w+) is leading '(.*)' /;
 			var m = re.exec(td.textContent);
 			if (m)
 			{
@@ -336,7 +336,6 @@ async function processGroups()
 
 			newGroup.messageId = msg.id;
 			newGroup.started = new Date().getTime();
-			logInfo(newGroup);
 		} else {
 			var oldGroup = status.groups[leader];
 
