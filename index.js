@@ -170,30 +170,32 @@ function formatTwoDigits(num)
 	return result;
 }
 
-function appendMessage(channel, messageId, started, append)
+async function appendAndRepostMessage(channel, messageId, started, append)
 {
-	channel.messages.fetch(messageId).then(message => 
-	{
-	  var embed = message.embeds[0];
+	var message = await	channel.messages.fetch(messageId);
+	
+	var embed = message.embeds[0];
 
-	  var s = parseInt(started);
-	  var diff = new Date().getTime() - s;
-	  var hours = Math.floor(diff / (1000 * 60 * 60));
-	  diff -= hours * (1000 * 60 * 60);
-	  
-	  var mins = Math.floor(diff / (1000 * 60));
-	  diff -= mins * (1000 * 60);
+	var s = parseInt(started);
+	var diff = new Date().getTime() - s;
+	var hours = Math.floor(diff / (1000 * 60 * 60));
+	diff -= hours * (1000 * 60 * 60);
+	
+	var mins = Math.floor(diff / (1000 * 60));
+	diff -= mins * (1000 * 60);
 
-	  var desc = embed.description;
-	  desc += "\n";
-	  desc += `(+${formatTwoDigits(hours)}:${formatTwoDigits(mins)}) `;
-	  desc += append;
+	var desc = embed.description;
+	desc += "\n";
+	desc += `(+${formatTwoDigits(hours)}:${formatTwoDigits(mins)}) `;
+	desc += append;
 
-	  const newEmbed = new EmbedBuilder().setDescription(desc);
+	const newEmbed = new EmbedBuilder().setDescription(desc);
 
-	  message.edit({embeds:[newEmbed]});
-	  makeChannelWhite(channel);
-  	}).catch(logInfo);
+	// delete original message
+	message.delete();
+
+	// post new one
+	return channel.send({ embeds: [newEmbed] });
 }
 
 function loadPage(url)
@@ -319,7 +321,7 @@ async function processGroups()
 		{
 			if ("messageId" in oldGroup)
 			{
-				appendMessage(channelGroups, oldGroup.messageId, oldGroup.started, `The group is over.`);
+				appendAndRepostMessage(channelGroups, oldGroup.messageId, oldGroup.started, `The group is over.`);
 			} else
 			{
 				sendMessage(channelGroups, `${leader}'s group is over.`)
@@ -345,7 +347,8 @@ async function processGroups()
 			{
 				if ("messageId" in oldGroup)
 				{
-					appendMessage(channelGroups, oldGroup.messageId, oldGroup.started, `${leader} has changed group name to '${newGroup.name}'`);
+					var msg = await appendAndRepostMessage(channelGroups, oldGroup.messageId, oldGroup.started, `${leader} has changed group name to '${newGroup.name}'`);
+					newGroup.messageId = msg.id;
 				} else
 				{
 					sendMessage(channelGroups, `${leader} has changed group name to '${newGroup.name}'`);
@@ -359,7 +362,8 @@ async function processGroups()
 			{
 				if ("messageId" in oldGroup)
 				{
-					appendMessage(channelGroups, oldGroup.messageId, oldGroup.started, `The group has became bigger. Now it has as many as ${newGroup.size} adventurers.`);
+					var msg = await appendAndRepostMessage(channelGroups, oldGroup.messageId, oldGroup.started, `The group has became bigger. Now it has as many as ${newGroup.size} adventurers.`);
+					newGroup.messageId = msg.id;
 				} else
 				{
 					sendMessage(channelGroups, `${leader}'s group has became bigger. Now it has as many as ${newGroup.size} adventurers.`)
@@ -370,7 +374,8 @@ async function processGroups()
 			{
 				if ("messageId" in oldGroup)
 				{
-					appendMessage(channelGroups, oldGroup.messageId, oldGroup.started, `The group has became smaller. Now it has only ${newGroup.size} adventurers.`);
+					var msg = await appendAndRepostMessage(channelGroups, oldGroup.messageId, oldGroup.started, `The group has became smaller. Now it has only ${newGroup.size} adventurers.`);
+					newGroup.messageId = msg.id;
 				} else
 				{
 					sendMessage(channelGroups, `${leader}'s group has became smaller. Now it has ${newGroup.size} adventurers.`);					
