@@ -520,7 +520,7 @@ function processAuctions()
 				for (var i = 0; i < sellerData.length; ++i)
 				{
 					var item = sellerData[i];
-					reportNewItem(seller, item.name, item.price, item.buyout);
+					reportNewItem(seller, item.name, item.price, item.buyout, item.ends);
 				}
 			} else
 			{
