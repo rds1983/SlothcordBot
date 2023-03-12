@@ -744,6 +744,12 @@ function processEpics()
 	status.epics = newEpics;
 }
 
+function reportNewPost(newPost)
+{
+	sendMessage(channelForum, `[${newPost.poster}](${newPost.posterLink}) made a new post in the thread '[${newPost.threadName}](${newPost.threadLink})'`);
+}
+
+
 function processForum()
 {
 	logInfo("Checking forum...");
@@ -806,23 +812,29 @@ function processForum()
 		for (var i = 0; i < newPosts.length; ++i)
 		{
 			var newPost = newPosts[i];
-			if (newPost.threadName == oldTopPost.threadName &&
-				newPost.poster == oldTopPost.poster)
+
+			if (newPost.threadName == oldTopPost.threadName)
 			{
 				oldTopPostIndex = i;
 				break;
 			}
 		}
 
+		logInfo(`oldTopPostIndex: ${oldTopPostIndex}`);
+
 		// All posts before oldTopPostIndex are new
 		for (var i = 0; i < oldTopPostIndex; ++i)
 		{
 			var newPost = newPosts[i];
-			sendMessage(channelForum, `[${newPost.poster}](${newPost.posterLink}) made a new post in the thread '[${newPost.threadName}](${newPost.threadLink})'`);
+			reportNewPost(newPost);
+		}
 
+		// If poster has changed then the post is new too
+		if (newPosts[oldTopPostIndex].poster != oldTopPost.poster)
+		{
+			reportNewPost(newPosts[oldTopPostIndex]);
 		}
 	}
 
 	status.posts = newPosts;
-
 }
