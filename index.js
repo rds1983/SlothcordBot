@@ -165,11 +165,34 @@ function formatCurrentTime()
 	return moment().tz("America/Los_Angeles").format("LT");	
 }
 
-async function appendAndRepostMessage(channel, messageId, append)
+async function appendAndRepostMessage(channel, leader, append)
 {
-	var message = await	channel.messages.fetch(messageId);
+	logInfo(`appendAndReportMessage for the group of ${leader}: ${append}`);
 	
-	var embed = message.embeds[0];
+	// Find the group message
+	var groupMessage = null;
+	var messages = await channelGroups.messages.fetch({limit: 5});
+	var messagesArray = Array.from(messages.values());
+	for (var i = 0; i < messagesArray.length; ++i)
+	{
+		var message = messagesArray[i];
+		var embed = message.embeds[0];
+
+		if (embed.description.includes(`${leader} has started`))
+		{
+			groupMessage = message;
+			break;
+		}
+	}
+
+	if (groupMessage == null)
+	{
+		logInfo(`WARNING: could not find message for group of ${leader}`);
+		return;
+	}
+
+
+	var embed = groupMessage.embeds[0];
 
 	var desc = embed.description;
 	desc += "\n";
@@ -179,7 +202,7 @@ async function appendAndRepostMessage(channel, messageId, append)
 	const newEmbed = new EmbedBuilder().setDescription(desc);
 
 	// delete original message
-	message.delete();
+	groupMessage.delete();
 
 	// post new one
 	return channel.send({ embeds: [newEmbed] });
@@ -203,7 +226,7 @@ async function process()
 {
 	try
 	{
-		await processGroups();
+		processGroups();
 		processAuctions();
 		processEpics();
 		processForum();
@@ -220,7 +243,7 @@ async function process()
 	}
 }
 
-async function processGroups()
+function processGroups()
 {
 	logInfo("Checking groups...");
 
@@ -282,16 +305,6 @@ async function processGroups()
 	for (var leader in newGroups)
 	{
 		var newGroup = newGroups[leader];
-		if (leader in status.groups)
-		{
-			var oldGroup = status.groups[leader];
-
-			if ("messageId" in oldGroup)
-			{
-				newGroup.messageId = oldGroup.messageId;
-			}
-		}
-
 		logInfo(newGroup);
 	}
 
@@ -301,14 +314,7 @@ async function processGroups()
 		var oldGroup = status.groups[leader];
 		if (!(leader in newGroups)) 
 		{
-			if ("messageId" in oldGroup)
-			{
-				appendAndRepostMessage(channelGroups, oldGroup.messageId, `The group is over.`);
-			} else
-			{
-				sendMessage(channelGroups, `${leader}'s group is over.`)
-			}
-
+			appendAndRepostMessage(channelGroups, leader, `The group is over.`);
 		}
 	}
 
@@ -318,22 +324,13 @@ async function processGroups()
 		var newGroup = newGroups[leader];
 		if (!(leader in status.groups))
 		{
-			var msg = await sendMessage(channelGroups, `(${formatCurrentTime()}) ${leader} has started group '${newGroup.name}'. Group consists of ${newGroup.size} adventurers.`)
-
-			newGroup.messageId = msg.id;
+			sendMessage(channelGroups, `(${formatCurrentTime()}) ${leader} has started group '${newGroup.name}'. Group consists of ${newGroup.size} adventurers.`)
 		} else {
 			var oldGroup = status.groups[leader];
 
 			if (oldGroup.name != newGroup.name)
 			{
-				if ("messageId" in oldGroup)
-				{
-					var msg = await appendAndRepostMessage(channelGroups, oldGroup.messageId, `${leader} has changed group name to '${newGroup.name}'`);
-					newGroup.messageId = msg.id;
-				} else
-				{
-					sendMessage(channelGroups, `${leader} has changed group name to '${newGroup.name}'`);
-				}
+				appendAndRepostMessage(channelGroups, leader, `${leader} has changed group name to '${newGroup.name}'`);
 			}
 			
 			var oldSizeDivided = Math.floor(oldGroup.size / 4);
@@ -341,26 +338,12 @@ async function processGroups()
 
 			if (newSizeDivided > oldSizeDivided)
 			{
-				if ("messageId" in oldGroup)
-				{
-					var msg = await appendAndRepostMessage(channelGroups, oldGroup.messageId, `The group has became bigger. Now it has as many as ${newGroup.size} adventurers.`);
-					newGroup.messageId = msg.id;
-				} else
-				{
-					sendMessage(channelGroups, `${leader}'s group has became bigger. Now it has as many as ${newGroup.size} adventurers.`)
-				}
+				appendAndRepostMessage(channelGroups, leader, `The group has became bigger. Now it has as many as ${newGroup.size} adventurers.`);
 			}
 			
 			if (newSizeDivided < oldSizeDivided)
 			{
-				if ("messageId" in oldGroup)
-				{
-					var msg = await appendAndRepostMessage(channelGroups, oldGroup.messageId, `The group has became smaller. Now it has only ${newGroup.size} adventurers.`);
-					newGroup.messageId = msg.id;
-				} else
-				{
-					sendMessage(channelGroups, `${leader}'s group has became smaller. Now it has ${newGroup.size} adventurers.`);					
-				}
+				appendAndRepostMessage(channelGroups, leader, `The group has became smaller. Now it has only ${newGroup.size} adventurers.`);
 			}
 		}
 	}
@@ -707,7 +690,7 @@ function processEpics()
 			result += `${i + 1}. ${epic.name} in ${epic.area} at ${epic.continent}\n`;
 		}
 
-		var messages = channelEpics.messages.fetch().then(messages => {
+		channelEpics.messages.fetch().then(messages => {
 			var messagesArray = Array.from(messages.values());
 
 			if (messagesArray.length == 0)
