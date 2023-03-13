@@ -276,7 +276,6 @@ async function processGroups()
 				group = {};
 				group.initialLeader = group.leader = m[1];
 				group.name = m[2];
-				group.size = 0;
 				group.adventurers = [];
 
 				continue;
@@ -291,7 +290,6 @@ async function processGroups()
 		if (children.length == 3)
 		{
 			// Member row
-			++group.size;
 			group.adventurers.push(children[2].textContent.trim());
 		}
 	}
@@ -326,7 +324,7 @@ async function processGroups()
 		var newGroup = newGroups[leader];
 		if (!(leader in status.groups))
 		{
-			sendMessage(channelGroups, `(${formatCurrentTime()}) ${leader} has started group '${newGroup.name}'. Group consists of ${newGroup.size} adventurers.`)
+			sendMessage(channelGroups, `(${formatCurrentTime()}) ${leader} has started group '${newGroup.name}'. Group consists of ${newGroup.adventurers.length} adventurers.`)
 		} else {
 			var oldGroup = status.groups[leader];
 
@@ -335,17 +333,17 @@ async function processGroups()
 				appendAndRepostMessage(channelGroups, leader, `${leader} has changed group name to '${newGroup.name}'`);
 			}
 			
-			var oldSizeDivided = Math.floor(oldGroup.size / 4);
-			var newSizeDivided = Math.floor(newGroup.size / 4);
+			var oldSizeDivided = Math.floor(oldGroup.adventurers.length / 4);
+			var newSizeDivided = Math.floor(newGroup.adventurers.length / 4);
 
 			if (newSizeDivided > oldSizeDivided)
 			{
-				appendAndRepostMessage(channelGroups, leader, `The group has became bigger. Now it has as many as ${newGroup.size} adventurers.`);
+				appendAndRepostMessage(channelGroups, leader, `The group has became bigger. Now it has as many as ${newGroup.adventurers.length} adventurers.`);
 			}
 			
 			if (newSizeDivided < oldSizeDivided)
 			{
-				appendAndRepostMessage(channelGroups, leader, `The group has became smaller. Now it has only ${newGroup.size} adventurers.`);
+				appendAndRepostMessage(channelGroups, leader, `The group has became smaller. Now it has only ${newGroup.adventurers.length} adventurers.`);
 			}
 		}
 	}
