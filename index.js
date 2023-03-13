@@ -1,5 +1,6 @@
 const statusFileName = "status.json";
 const checkIntervalInMs = 5 * 60 * 1000 // 5 minutes
+const timeZoneName = "America/Los_Angeles";
 
 const { EmbedBuilder, Discord } = require('discord.js');
 const XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
@@ -7,6 +8,7 @@ const { Client, GatewayIntentBits } = require('discord.js');
 const config = require('./config.json');
 const fs = require('fs');
 const jsdom = require("jsdom");
+const moment = require('moment-timezone');
 const { JSDOM } = jsdom;
 
 // Create a new client instance
@@ -158,35 +160,20 @@ function makeChannelWhite(channel)
 	});
 }
 
-function formatTwoDigits(num)
+function formatCurrentTime()
 {
-	var result = `${num}`;
-
-	if (num < 10)
-	{
-		result = '0' + result;
-	}
-
-	return result;
+	return moment().tz("America/Los_Angeles").format("LT");	
 }
 
-async function appendAndRepostMessage(channel, messageId, started, append)
+async function appendAndRepostMessage(channel, messageId, append)
 {
 	var message = await	channel.messages.fetch(messageId);
 	
 	var embed = message.embeds[0];
 
-	var s = parseInt(started);
-	var diff = new Date().getTime() - s;
-	var hours = Math.floor(diff / (1000 * 60 * 60));
-	diff -= hours * (1000 * 60 * 60);
-	
-	var mins = Math.floor(diff / (1000 * 60));
-	diff -= mins * (1000 * 60);
-
 	var desc = embed.description;
 	desc += "\n";
-	desc += `(+${formatTwoDigits(hours)}:${formatTwoDigits(mins)}) `;
+	desc += `(${formatCurrentTime()}) `;
 	desc += append;
 
 	const newEmbed = new EmbedBuilder().setDescription(desc);
@@ -303,11 +290,6 @@ async function processGroups()
 			{
 				newGroup.messageId = oldGroup.messageId;
 			}
-
-			if ("started" in oldGroup)
-			{
-				newGroup.started = oldGroup.started;
-			}
 		}
 
 		logInfo(newGroup);
@@ -321,7 +303,7 @@ async function processGroups()
 		{
 			if ("messageId" in oldGroup)
 			{
-				appendAndRepostMessage(channelGroups, oldGroup.messageId, oldGroup.started, `The group is over.`);
+				appendAndRepostMessage(channelGroups, oldGroup.messageId, `The group is over.`);
 			} else
 			{
 				sendMessage(channelGroups, `${leader}'s group is over.`)
@@ -336,10 +318,9 @@ async function processGroups()
 		var newGroup = newGroups[leader];
 		if (!(leader in status.groups))
 		{
-			var msg = await sendMessage(channelGroups, `${leader} has started group '${newGroup.name}'. Group consists of ${newGroup.size} adventurers.`)
+			var msg = await sendMessage(channelGroups, `(${formatCurrentTime()}) ${leader} has started group '${newGroup.name}'. Group consists of ${newGroup.size} adventurers.`)
 
 			newGroup.messageId = msg.id;
-			newGroup.started = new Date().getTime();
 		} else {
 			var oldGroup = status.groups[leader];
 
@@ -347,7 +328,7 @@ async function processGroups()
 			{
 				if ("messageId" in oldGroup)
 				{
-					var msg = await appendAndRepostMessage(channelGroups, oldGroup.messageId, oldGroup.started, `${leader} has changed group name to '${newGroup.name}'`);
+					var msg = await appendAndRepostMessage(channelGroups, oldGroup.messageId, `${leader} has changed group name to '${newGroup.name}'`);
 					newGroup.messageId = msg.id;
 				} else
 				{
@@ -362,7 +343,7 @@ async function processGroups()
 			{
 				if ("messageId" in oldGroup)
 				{
-					var msg = await appendAndRepostMessage(channelGroups, oldGroup.messageId, oldGroup.started, `The group has became bigger. Now it has as many as ${newGroup.size} adventurers.`);
+					var msg = await appendAndRepostMessage(channelGroups, oldGroup.messageId, `The group has became bigger. Now it has as many as ${newGroup.size} adventurers.`);
 					newGroup.messageId = msg.id;
 				} else
 				{
@@ -374,7 +355,7 @@ async function processGroups()
 			{
 				if ("messageId" in oldGroup)
 				{
-					var msg = await appendAndRepostMessage(channelGroups, oldGroup.messageId, oldGroup.started, `The group has became smaller. Now it has only ${newGroup.size} adventurers.`);
+					var msg = await appendAndRepostMessage(channelGroups, oldGroup.messageId, `The group has became smaller. Now it has only ${newGroup.size} adventurers.`);
 					newGroup.messageId = msg.id;
 				} else
 				{
