@@ -28,6 +28,7 @@ var status = {};
 status.groups = {};
 status.auctions = {};
 status.epics = [];
+status.posts = [];
 
 if (fs.existsSync(statusFileName))
 {
@@ -196,9 +197,7 @@ async function appendAndRepostMessage(channel, leader, append)
 	var embed = groupMessage.embeds[0];
 
 	var desc = embed.description;
-	desc += "\n";
-	desc += `(${formatCurrentTime()}) `;
-	desc += append;
+	desc += `\n${formatCurrentTime()} ${append}`;
 
 	const newEmbed = new EmbedBuilder().setDescription(desc);
 
@@ -325,7 +324,7 @@ function processGroups()
 		var newGroup = newGroups[leader];
 		if (!(leader in status.groups))
 		{
-			sendMessage(channelGroups, `(${formatCurrentTime()}) ${leader} has started group '${newGroup.name}'. Group consists of ${newGroup.size} adventurers.`)
+			sendMessage(channelGroups, `${formatCurrentTime()} ${leader} has started group '${newGroup.name}'. Group consists of ${newGroup.size} adventurers.`)
 		} else {
 			var oldGroup = status.groups[leader];
 
