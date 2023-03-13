@@ -172,7 +172,7 @@ async function appendAndRepostMessage(channel, leader, append)
 
 	// Find the group message
 	var groupMessage = null;
-	var messages = await channelGroups.messages.fetch({limit: 5});
+	var messages = await channelGroups.messages.fetch({limit: 10});
 	var messagesArray = Array.from(messages.values());
 	for (var i = 0; i < messagesArray.length; ++i)
 	{
@@ -303,9 +303,16 @@ async function processGroups()
 	// Update initial leaders
 	for (var leader in newGroups)
 	{
+		var newGroup = newGroups[leader];
 		if (leader in status.groups)
 		{
-			newGroups[leader].initialLeader = status.groups[leader].initialLeader;
+			var oldGroup = status.groups[leader];
+			newGroup.initialLeader = oldGroup.initialLeader;
+
+			if ("started" in oldGroup)
+			{
+				newGroup.started = oldGroup.started;
+			}
 		}
 	}
 	
@@ -327,6 +334,7 @@ async function processGroups()
 						// Leader change
 						await appendAndRepostMessage(channelGroups, oldGroup.initialLeader, `The new leader is ${newLeader}.`);
 						newGroups[newLeader].initialLeader = oldGroup.initialLeader;
+						newGroups[newLeader].started = oldGroup.started;
 						leaderChanges[newLeader] = true;
 						changedLeader = true;
 					}
@@ -350,6 +358,7 @@ async function processGroups()
 		{
 			if (!(leader in leaderChanges))
 			{
+				newGroup.started = moment().unix();
 				sendMessage(channelGroups, `(${formatCurrentTime()}) ${leader} has started group '${newGroup.name}'. Group consists of ${newGroup.adventurers.length} adventurers.`)
 			}
 		} else {
