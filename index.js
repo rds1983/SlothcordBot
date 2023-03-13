@@ -88,20 +88,20 @@ client.on('messageCreate', msg => {
 	}
 
 	try {
-	var command = msg.content.substring(1);
-	logInfo(`Command: ${command}`);
+		var command = msg.content.substring(1);
+		logInfo(`Command: ${command}`);
 
-	if (command == "epics")
-	{
-		var result = "";
-		for (var i = 0; i < status.epics.length; ++i)
+		if (command == "epics")
 		{
-			var epic = status.epics[i];
-			result += `${i + 1}. ${epic.name} in ${epic.area} at ${epic.continent}\n`;
-		}
+			var result = "";
+			for (var i = 0; i < status.epics.length; ++i)
+			{
+				var epic = status.epics[i];
+				result += `${i + 1}. ${epic.name} in ${epic.area} at ${epic.continent}\n`;
+			}
 
-		sendMessage(msg.channel, result);
-	}
+			sendMessage(msg.channel, result);
+		}
 	}
 	catch(err)
 	{
@@ -226,7 +226,7 @@ async function process()
 {
 	try
 	{
-		processGroups();
+		await processGroups();
 		processAuctions();
 		processEpics();
 		processForum();
@@ -251,7 +251,6 @@ async function processGroups()
 	const dom = new JSDOM(data);
 	var document = dom.window.document;
 
-	var state = 0;
 	var all = document.getElementsByTagName("tr");
 	var newGroups = {};
 	var group = null;
@@ -301,22 +300,38 @@ async function processGroups()
 		newGroups[group.leader] = group;
 	}
 	
-	// Log groups
-	for (var leader in newGroups)
-	{
-		var newGroup = newGroups[leader];
-		logInfo(newGroup);
-	}
-
-	// Check for ended groups
+	// Check for groups that were over or had changed the leader
+	var leaderChanges = {};
 	for (var leader in status.groups) 
 	{
 		var oldGroup = status.groups[leader];
 		if (!(leader in newGroups)) 
 		{
-			await appendAndRepostMessage(channelGroups, leader, `The group is over.`);
+			// Check for the leader change
+			var changedLeader = false;
+			for (var newLeader in newGroups)
+			{
+				for (var i = 0; i < oldGroup.adventurers.length; ++i)
+				{
+					if (oldGroup.adventurers[i] == newLeader)
+					{
+						// Leader change
+						await appendAndRepostMessage(channelGroups, oldGroup.initialLeader, `The new leader is ${newLeader}.`);
+						newGroups[newLeader].initialLeader = oldGroup.initialLeader;
+						leaderChanges[newLeader] = true;
+						changedLeader = true;
+					}
+				}
+			}
+
+			if (!changedLeader)
+			{
+				await appendAndRepostMessage(channelGroups, oldGroup.initialLeader, `The group is over.`);
+			}
 		}
 	}
+
+	logInfo(leaderChanges);
 
 	// Check for new and renamed groups
 	for (var leader in newGroups)
@@ -324,13 +339,16 @@ async function processGroups()
 		var newGroup = newGroups[leader];
 		if (!(leader in status.groups))
 		{
-			sendMessage(channelGroups, `(${formatCurrentTime()}) ${leader} has started group '${newGroup.name}'. Group consists of ${newGroup.adventurers.length} adventurers.`)
+			if (!(leader in leaderChanges))
+			{
+				sendMessage(channelGroups, `(${formatCurrentTime()}) ${leader} has started group '${newGroup.name}'. Group consists of ${newGroup.adventurers.length} adventurers.`)
+			}
 		} else {
 			var oldGroup = status.groups[leader];
 
 			if (oldGroup.name != newGroup.name)
 			{
-				appendAndRepostMessage(channelGroups, leader, `${leader} has changed group name to '${newGroup.name}'`);
+				appendAndRepostMessage(channelGroups, oldGroup.initialLeader, `${leader} has changed group name to '${newGroup.name}'`);
 			}
 			
 			var oldSizeDivided = Math.floor(oldGroup.adventurers.length / 4);
@@ -338,15 +356,22 @@ async function processGroups()
 
 			if (newSizeDivided > oldSizeDivided)
 			{
-				appendAndRepostMessage(channelGroups, leader, `The group has became bigger. Now it has as many as ${newGroup.adventurers.length} adventurers.`);
+				appendAndRepostMessage(channelGroups, oldGroup.initialLeader, `The group has became bigger. Now it has as many as ${newGroup.adventurers.length} adventurers.`);
 			}
 			
 			if (newSizeDivided < oldSizeDivided)
 			{
-				appendAndRepostMessage(channelGroups, leader, `The group has became smaller. Now it has only ${newGroup.adventurers.length} adventurers.`);
+				appendAndRepostMessage(channelGroups, oldGroup.initialLeader, `The group has became smaller. Now it has only ${newGroup.adventurers.length} adventurers.`);
 			}
 		}
 	}
+
+	// Log groups
+	for (var leader in newGroups)
+	{
+		var newGroup = newGroups[leader];
+		logInfo(newGroup);
+	}	
 
 	status.groups = newGroups;
 }
