@@ -299,6 +299,15 @@ async function processGroups()
 	{
 		newGroups[group.leader] = group;
 	}
+
+	// Update initial leaders
+	for (var leader in newGroups)
+	{
+		if (leader in status.groups)
+		{
+			newGroups[leader].initialLeader = status.groups[leader].initialLeader;
+		}
+	}
 	
 	// Check for groups that were over or had changed the leader
 	var leaderChanges = {};
