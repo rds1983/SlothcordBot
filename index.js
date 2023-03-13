@@ -168,7 +168,7 @@ function formatCurrentTime()
 async function appendAndRepostMessage(channel, leader, append)
 {
 	logInfo(`appendAndReportMessage for the group of ${leader}: ${append}`);
-	
+
 	// Find the group message
 	var groupMessage = null;
 	var messages = await channelGroups.messages.fetch({limit: 5});
@@ -181,6 +181,7 @@ async function appendAndRepostMessage(channel, leader, append)
 		if (embed.description.includes(`${leader} has started`))
 		{
 			groupMessage = message;
+			logInfo(`Group message id: ${groupMessage.id}`);
 			break;
 		}
 	}
