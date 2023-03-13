@@ -274,9 +274,10 @@ async function processGroups()
 				}
 				
 				group = {};
-				group.leader = m[1];
+				group.initialLeader = group.leader = m[1];
 				group.name = m[2];
 				group.size = 0;
+				group.adventurers = [];
 
 				continue;
 			}
@@ -291,6 +292,7 @@ async function processGroups()
 		{
 			// Member row
 			++group.size;
+			group.adventurers.push(children[2].textContent.trim());
 		}
 	}
 	
