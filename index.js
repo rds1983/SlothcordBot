@@ -313,7 +313,7 @@ async function processGroups()
 			{
 				for (var i = 0; i < oldGroup.adventurers.length; ++i)
 				{
-					if (oldGroup.adventurers[i] == newLeader)
+					if (oldGroup.adventurers[i] == newLeader && Math.abs(newGroups[newLeader].adventurers.length - oldGroup.adventurers.length) <= 3)
 					{
 						// Leader change
 						await appendAndRepostMessage(channelGroups, oldGroup.initialLeader, `The new leader is ${newLeader}.`);
