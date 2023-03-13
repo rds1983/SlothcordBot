@@ -363,7 +363,7 @@ async function processGroups()
 			if (!(leader in leaderChanges))
 			{
 				newGroup.started = moment().unix();
-				sendMessage(channelGroups, `(${formatCurrentTime()}) ${leader} has started group '${newGroup.name}'. Group consists of ${newGroup.adventurers.length} adventurers.`)
+				sendMessage(channelGroups, `(${formatCurrentTime()} PST) ${leader} has started group '${newGroup.name}'. Group consists of ${newGroup.adventurers.length} adventurers.`)
 			}
 		} else {
 			var oldGroup = status.groups[leader];
