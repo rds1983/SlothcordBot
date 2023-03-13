@@ -243,7 +243,7 @@ async function process()
 	}
 }
 
-function processGroups()
+async function processGroups()
 {
 	logInfo("Checking groups...");
 
@@ -314,7 +314,7 @@ function processGroups()
 		var oldGroup = status.groups[leader];
 		if (!(leader in newGroups)) 
 		{
-			appendAndRepostMessage(channelGroups, leader, `The group is over.`);
+			await appendAndRepostMessage(channelGroups, leader, `The group is over.`);
 		}
 	}
 
