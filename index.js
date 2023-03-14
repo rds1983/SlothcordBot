@@ -155,7 +155,7 @@ function sendMessage(channel, message)
 
 function formatCurrentTime()
 {
-	return moment().tz(timeZoneName).format("LT");	
+	return moment().tz(timeZoneName).format("HH:mm");	
 }
 
 function formatTwoDigits(num)
