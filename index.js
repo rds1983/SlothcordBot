@@ -385,14 +385,14 @@ async function processGroups()
 			if (!(leader in leaderChanges))
 			{
 				newGroup.started = new Date().getTime();
-				sendMessage(channelGroups, `(${formatCurrentTime()} PST) ${leader} has started group '${newGroup.name}'. Group consists of ${newGroup.adventurers.length} adventurers.`)
+				await sendMessage(channelGroups, `(${formatCurrentTime()} PST) ${leader} has started group '${newGroup.name}'. Group consists of ${newGroup.adventurers.length} adventurers.`)
 			}
 		} else {
 			var oldGroup = status.groups[leader];
 
 			if (oldGroup.name != newGroup.name)
 			{
-				appendAndRepostMessage(channelGroups, oldGroup.initialLeader, `${leader} has changed group name to '${newGroup.name}'`, oldGroup.started);
+				await appendAndRepostMessage(channelGroups, oldGroup.initialLeader, `${leader} has changed group name to '${newGroup.name}'`, oldGroup.started);
 			}
 			
 			var oldSizeDivided = Math.floor(oldGroup.adventurers.length / 4);
@@ -400,12 +400,12 @@ async function processGroups()
 
 			if (newSizeDivided > oldSizeDivided)
 			{
-				appendAndRepostMessage(channelGroups, oldGroup.initialLeader, `The group has became bigger. Now it has as many as ${newGroup.adventurers.length} adventurers.`, oldGroup.started);
+				await appendAndRepostMessage(channelGroups, oldGroup.initialLeader, `The group has became bigger. Now it has as many as ${newGroup.adventurers.length} adventurers.`, oldGroup.started);
 			}
 			
 			if (newSizeDivided < oldSizeDivided)
 			{
-				appendAndRepostMessage(channelGroups, oldGroup.initialLeader, `The group has became smaller. Now it has only ${newGroup.adventurers.length} adventurers.`, oldGroup.started);
+				await appendAndRepostMessage(channelGroups, oldGroup.initialLeader, `The group has became smaller. Now it has only ${newGroup.adventurers.length} adventurers.`, oldGroup.started);
 			}
 		}
 	}
