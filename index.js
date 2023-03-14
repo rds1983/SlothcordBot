@@ -231,7 +231,14 @@ async function appendAndRepostMessage(channel, leader, append, started)
 	await channel.send({ embeds: [newEmbed] });
 
 	// delete original message
-	await groupMessage.delete();
+	try
+	{
+		await groupMessage.delete();
+	}
+	catch(err)
+	{
+		logInfo(err);
+	}
 }
 
 function loadPage(url)
@@ -767,9 +774,16 @@ async function processEpics()
 		await sendMessage(channelEpics, result);
 
 		// Delete old messages
-		for (var i = 0; i < messagesArray.length; ++i)
+		try 
 		{
-			await messagesArray[i].delete();
+			for (var i = 0; i < messagesArray.length; ++i)
+			{
+				await messagesArray[i].delete();
+			}
+		}
+		catch(err)
+		{
+			logInfo(err);
 		}
 	}
 
