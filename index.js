@@ -228,7 +228,7 @@ async function appendAndRepostMessage(channel, leader, append, started)
 		desc += `(+${formatTwoDigits(hours)}:${formatTwoDigits(mins)})`;
 	} else
 	{
-		desc += `(${formatCurrentTime()} PST)`;
+		desc += `(${formatCurrentTime()})`;
 	}
 
 	desc += ` ${append}`;
