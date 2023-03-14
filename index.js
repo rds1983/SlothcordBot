@@ -1,4 +1,8 @@
-const statusFileName = "status.json";
+const statusFileNameGroups = "status.groups.json";
+const statusFileNameAuctions = "status.auctions.json";
+const statusFileNameEpics = "status.epics.json";
+const statusFileNamePosts = "status.posts.json";
+
 const checkIntervalInMs = 5 * 60 * 1000 // 5 minutes
 const timeZoneName = "America/Los_Angeles";
 
@@ -23,40 +27,13 @@ const client = new Client({
 var channelGroups;
 var channelEmporium;
 var channelEpics;
+var channelForum;
 
-var status = {};
-status.groups = {};
-status.auctions = {};
-status.epics = [];
-status.posts = [];
-
-if (fs.existsSync(statusFileName))
-{
-	try
-	{
-		logInfo("Status file was found.");
-		fs.readFile(statusFileName, 'utf8', function readFileCallback(err, data){
-			if (err)
-			{
-				logInfo(err);
-			} else {
-				try 
-				{
-					status = JSON.parse(data);
-				}
-				catch (err)
-				{
-					logInfo(err);
-				}
-			}
-		});
-	}
-	catch (err)
-	{
-		logInfo(err);
-	}
-
-}
+// Load statuses
+var statusGroups = loadStatus(statusFileNameGroups) || {};
+var statusAuctions = loadStatus(statusFileNameAuctions) || {};
+var statusEpics = loadStatus(statusFileNameEpics) || [];
+var statusPosts = loadStatus(statusFileNamePosts) || [];
 
 client.on("ready", () => {
 	logInfo(`Logged in as ${client.user.tag}!`);
@@ -94,9 +71,9 @@ client.on('messageCreate', msg => {
 		if (command == "epics")
 		{
 			var result = "";
-			for (var i = 0; i < status.epics.length; ++i)
+			for (var i = 0; i < statusEpics.length; ++i)
 			{
-				var epic = status.epics[i];
+				var epic = statusEpics[i];
 				result += `${i + 1}. ${epic.name} in ${epic.area} at ${epic.continent}\n`;
 			}
 
@@ -111,6 +88,38 @@ client.on('messageCreate', msg => {
 
 
 client.login(config.token);
+
+function loadStatus(statusFileName)
+{
+	if (fs.existsSync(statusFileName))
+	{
+		try
+		{
+			logInfo(`Status file ${statusFileName} was found.`);
+
+			var data = fs.readFileSync(statusFileName);
+			return JSON.parse(data);
+		}
+		catch (err)
+		{
+			logInfo(err);
+		}
+	} else
+	{
+		logInfo(`Couldn't find the status file ${statusFileName}.`);
+	}
+
+	return null;
+}
+
+function saveStatus(status, statusFileName)
+{
+		// Save new status
+	logInfo(`Saving new status ${statusFileName}...`);
+	var json = JSON.stringify(status, null, 2);
+
+	fs.writeFileSync(statusFileName, json, 'utf8');
+}
 
 function logInfo(info)
 {
@@ -260,15 +269,33 @@ async function process()
 	try
 	{
 		await processGroups();
+	}
+	catch (err)
+	{
+		logInfo(err);
+	}
+
+	try
+	{
 		processAuctions();
+	}
+	catch (err)
+	{
+		logInfo(err);
+	}
+
+	try
+	{
 		await processEpics();
+	}
+	catch (err)
+	{
+		logInfo(err);
+	}
+
+	try
+	{
 		processForum();
-
-		// Save new status
-		logInfo("Saving new status...");
-		var json = JSON.stringify(status, null, 2);
-		fs.writeFile(statusFileName, json, 'utf8', function(err) { if (err) logInfo(err); });
-
 	}
 	catch (err)
 	{
@@ -337,9 +364,9 @@ async function processGroups()
 	for (var leader in newGroups)
 	{
 		var newGroup = newGroups[leader];
-		if (leader in status.groups)
+		if (leader in statusGroups)
 		{
-			var oldGroup = status.groups[leader];
+			var oldGroup = statusGroups[leader];
 			newGroup.initialLeader = oldGroup.initialLeader;
 
 			if ("started" in oldGroup)
@@ -351,9 +378,9 @@ async function processGroups()
 	
 	// Check for groups that were over or had changed the leader
 	var leaderChanges = {};
-	for (var leader in status.groups) 
+	for (var leader in statusGroups) 
 	{
-		var oldGroup = status.groups[leader];
+		var oldGroup = statusGroups[leader];
 		if (!(leader in newGroups)) 
 		{
 			// Check for the leader change
@@ -387,7 +414,7 @@ async function processGroups()
 	for (var leader in newGroups)
 	{
 		var newGroup = newGroups[leader];
-		if (!(leader in status.groups))
+		if (!(leader in statusGroups))
 		{
 			if (!(leader in leaderChanges))
 			{
@@ -395,7 +422,7 @@ async function processGroups()
 				await sendMessage(channelGroups, `(${formatCurrentTime()} PST) ${leader} has started group '${newGroup.name}'. Group consists of ${newGroup.adventurers.length} adventurers.`)
 			}
 		} else {
-			var oldGroup = status.groups[leader];
+			var oldGroup = statusGroups[leader];
 
 			if (oldGroup.name != newGroup.name)
 			{
@@ -424,7 +451,8 @@ async function processGroups()
 		logInfo(newGroup);
 	}	
 
-	status.groups = newGroups;
+	saveStatus(newGroups, statusFileNameGroups);
+	statusGroups = newGroups;
 }
 
 function buildItemLink(name)
@@ -551,12 +579,12 @@ function processAuctions()
 	
 	logInfo(`Items count: ${count}`);
 	
-	if (!isEmpty(status.auctions))
+	if (!isEmpty(statusAuctions))
 	{
 		for (var seller in newAuctions)
 		{
 			logInfo(`Going through items of ${seller}`);
-			if (!(seller in status.auctions))
+			if (!(seller in statusAuctions))
 			{
 				// New seller
 				logInfo(`New seller`);
@@ -571,7 +599,7 @@ function processAuctions()
 			{
 				// Remove existing items
 				var newData = newAuctions[seller].slice();
-				var oldData = status.auctions[seller];
+				var oldData = statusAuctions[seller];
 				
 				var newDataSameIndices = {};
 				var oldDataSameIndices = {};
@@ -639,11 +667,11 @@ function processAuctions()
 		}
 		
 		// Report items of disappeared sellers as sold
-		for (var seller in status.auctions)
+		for (var seller in statusAuctions)
 		{
 			if (!(seller in newAuctions))
 			{
-				var items = status.auctions[seller];
+				var items = statusAuctions[seller];
 				for (var i = 0; i < items.length; ++i)
 				{
 					var item = items[i];
@@ -656,7 +684,8 @@ function processAuctions()
 		logInfo("Existing auctions data is empty.");
 	}
 
-	status.auctions = newAuctions;
+	saveStatus(newAuctions, statusFileNameAuctions);
+	statusAuctions = newAuctions;
 }
 
 async function processEpics()
@@ -707,54 +736,49 @@ async function processEpics()
 	}
 
 	var changed = false;
-	if ("epics" in status)
+	
+	// Report new epics
+	for (var i = 0; i < newEpics.length; ++i)
 	{
-		// Report new epics
-		for (var i = 0; i < newEpics.length; ++i)
+		var newEpic = newEpics[i];
+		var found = false;
+		for (var j = 0; j < statusEpics.length; ++j)
 		{
-			var newEpic = newEpics[i];
-			var found = false;
-			for (var j = 0; j < status.epics.length; ++j)
-			{
-				var oldEpic = status.epics[j];
-				
-				if (newEpic.name == oldEpic.name)
-				{
-					found = true;
-					break;
-				}
-			}
+			var oldEpic = statusEpics[j];
 			
-			if (!found)
+			if (newEpic.name == oldEpic.name)
 			{
-				changed = true;
+				found = true;
+				break;
 			}
 		}
+		
+		if (!found)
+		{
+			changed = true;
+		}
+	}
 
-		// Report killed epics
-		for (var i = 0; i < status.epics.length; ++i)
+	// Report killed epics
+	for (var i = 0; i < statusEpics.length; ++i)
+	{
+		var oldEpic = statusEpics[i];
+		var found = false;
+		for (var j = 0; j < newEpics.length; ++j)
 		{
-			var oldEpic = status.epics[i];
-			var found = false;
-			for (var j = 0; j < newEpics.length; ++j)
-			{
-				var newEpic = newEpics[j];
-				
-				if (newEpic.name == oldEpic.name)
-				{
-					found = true;
-					break;
-				}
-			}
+			var newEpic = newEpics[j];
 			
-			if (!found)
+			if (newEpic.name == oldEpic.name)
 			{
-				changed = true;
+				found = true;
+				break;
 			}
 		}
-	} else
-	{
-		changed = true;
+		
+		if (!found)
+		{
+			changed = true;
+		}
 	}
 
 	if (changed)
@@ -787,7 +811,8 @@ async function processEpics()
 		}
 	}
 
-	status.epics = newEpics;
+	saveStatus(newEpics, statusFileNameEpics);
+	statusEpics = newEpics;
 }
 
 function reportNewPost(newPost)
@@ -851,9 +876,9 @@ function processForum()
 		}
 	}
 
-	if ("posts" in status && status.posts.length > 0)
+	if (statusPosts.length > 0)
 	{
-		var oldTopPost = status.posts[0];
+		var oldTopPost = statusPosts[0];
 		var oldTopPostIndex = 0;
 		for (var i = 0; i < newPosts.length; ++i)
 		{
@@ -882,5 +907,6 @@ function processForum()
 		}
 	}
 
-	status.posts = newPosts;
+	saveStatus(newPosts, statusFileNamePosts);
+	statusPosts = newPosts;
 }
