@@ -153,14 +153,6 @@ function sendMessage(channel, message)
 	return channel.send({ embeds: [embed] });
 }
 
-function makeChannelWhite(channel)
-{
-	// Post and delete something just to make the channel white
-	channel.send("something").then(msg => {
-		msg.delete();	
-	});
-}
-
 function formatCurrentTime()
 {
 	return moment().tz(timeZoneName).format("LT");	
@@ -262,7 +254,7 @@ async function process()
 	{
 		await processGroups();
 		processAuctions();
-		processEpics();
+		await processEpics();
 		processForum();
 
 		// Save new status
@@ -660,7 +652,7 @@ function processAuctions()
 	status.auctions = newAuctions;
 }
 
-function processEpics()
+async function processEpics()
 {
 	logInfo("Checking epics...");
 
@@ -767,24 +759,17 @@ function processEpics()
 			result += `${i + 1}. ${epic.name} in ${epic.area} at ${epic.continent}\n`;
 		}
 
-		channelEpics.messages.fetch().then(messages => {
-			var messagesArray = Array.from(messages.values());
+		var messages = await channelEpics.messages.fetch();
+		var messagesArray = Array.from(messages.values());
 
-			if (messagesArray.length == 0)
-			{
-				// Post new message
-				sendMessage(channelEpics, result);		
-			} else
-			{
-				// Edit existing
-				const embed = new EmbedBuilder().setDescription(result);
+		// Delete old messages
+		for (var i = 0; i < messagesArray.length; ++i)
+		{
+			messagesArray[i].delete();
+		}
 
-				var message = messagesArray[0];
-				message.edit({embeds:[embed]});
-
-				makeChannelWhite(channelEpics);
-			}
-		});
+		// Post new messages with the epics' status
+		sendMessage(channelEpics, result);		
 	}
 
 	status.epics = newEpics;
