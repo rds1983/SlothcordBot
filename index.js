@@ -227,11 +227,11 @@ async function appendAndRepostMessage(channel, leader, append, started)
 
 	const newEmbed = new EmbedBuilder().setDescription(desc);
 
+	// post new one
+	channel.send({ embeds: [newEmbed] });
+
 	// delete original message
 	groupMessage.delete();
-
-	// post new one
-	return channel.send({ embeds: [newEmbed] });
 }
 
 function loadPage(url)
