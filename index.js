@@ -163,7 +163,7 @@ function makeChannelWhite(channel)
 
 function formatCurrentTime()
 {
-	return moment().tz("America/Los_Angeles").format("LT");	
+	return moment().tz(timeZoneName).format("LT");	
 }
 
 function formatTwoDigits(num)
