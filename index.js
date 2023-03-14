@@ -166,7 +166,19 @@ function formatCurrentTime()
 	return moment().tz("America/Los_Angeles").format("LT");	
 }
 
-async function appendAndRepostMessage(channel, leader, append)
+function formatTwoDigits(num)
+{
+	var result = `${num}`;
+
+	if (num < 10)
+	{
+		result = '0' + result;
+	}
+
+	return result;
+}
+
+async function appendAndRepostMessage(channel, leader, append, started)
 {
 	logInfo(`appendAndReportMessage for the group of ${leader}: ${append}`);
 
@@ -201,7 +213,25 @@ async function appendAndRepostMessage(channel, leader, append)
 	var embed = groupMessage.embeds[0];
 
 	var desc = embed.description;
-	desc += `\n(${formatCurrentTime()}) ${append}`;
+
+	desc += "\n";
+	if (typeof started !== "undefined")
+	{
+		var s = parseInt(started);
+		var diff = new Date().getTime() - s;
+		var hours = Math.floor(diff / (1000 * 60 * 60));
+		diff -= hours * (1000 * 60 * 60);
+	
+		var mins = Math.floor(diff / (1000 * 60));
+		diff -= mins * (1000 * 60);
+	
+		desc += `(+${formatTwoDigits(hours)}:${formatTwoDigits(mins)})`;
+	} else
+	{
+		desc += `(${formatCurrentTime()} PST)`;
+	}
+
+	desc += ` ${append}`;
 
 	const newEmbed = new EmbedBuilder().setDescription(desc);
 
@@ -336,7 +366,7 @@ async function processGroups()
 					if (oldGroup.adventurers[i] == newLeader && Math.abs(newGroups[newLeader].adventurers.length - oldGroup.adventurers.length) <= 3)
 					{
 						// Leader change
-						await appendAndRepostMessage(channelGroups, oldGroup.initialLeader, `The new leader is ${newLeader}.`);
+						await appendAndRepostMessage(channelGroups, oldGroup.initialLeader, `The new leader is ${newLeader}.`, oldGroup.started);
 						newGroups[newLeader].initialLeader = oldGroup.initialLeader;
 						newGroups[newLeader].started = oldGroup.started;
 						leaderChanges[newLeader] = true;
@@ -347,7 +377,7 @@ async function processGroups()
 
 			if (!changedLeader)
 			{
-				await appendAndRepostMessage(channelGroups, oldGroup.initialLeader, `The group is over.`);
+				await appendAndRepostMessage(channelGroups, oldGroup.initialLeader, `The group is over.`, oldGroup.started);
 			}
 		}
 	}
@@ -362,7 +392,7 @@ async function processGroups()
 		{
 			if (!(leader in leaderChanges))
 			{
-				newGroup.started = moment().unix();
+				newGroup.started = new Date().getTime();
 				sendMessage(channelGroups, `(${formatCurrentTime()} PST) ${leader} has started group '${newGroup.name}'. Group consists of ${newGroup.adventurers.length} adventurers.`)
 			}
 		} else {
@@ -370,7 +400,7 @@ async function processGroups()
 
 			if (oldGroup.name != newGroup.name)
 			{
-				appendAndRepostMessage(channelGroups, oldGroup.initialLeader, `${leader} has changed group name to '${newGroup.name}'`);
+				appendAndRepostMessage(channelGroups, oldGroup.initialLeader, `${leader} has changed group name to '${newGroup.name}'`, oldGroup.started);
 			}
 			
 			var oldSizeDivided = Math.floor(oldGroup.adventurers.length / 4);
@@ -378,12 +408,12 @@ async function processGroups()
 
 			if (newSizeDivided > oldSizeDivided)
 			{
-				appendAndRepostMessage(channelGroups, oldGroup.initialLeader, `The group has became bigger. Now it has as many as ${newGroup.adventurers.length} adventurers.`);
+				appendAndRepostMessage(channelGroups, oldGroup.initialLeader, `The group has became bigger. Now it has as many as ${newGroup.adventurers.length} adventurers.`, oldGroup.started);
 			}
 			
 			if (newSizeDivided < oldSizeDivided)
 			{
-				appendAndRepostMessage(channelGroups, oldGroup.initialLeader, `The group has became smaller. Now it has only ${newGroup.adventurers.length} adventurers.`);
+				appendAndRepostMessage(channelGroups, oldGroup.initialLeader, `The group has became smaller. Now it has only ${newGroup.adventurers.length} adventurers.`, oldGroup.started);
 			}
 		}
 	}
