@@ -176,7 +176,7 @@ async function appendAndRepostMessage(channel, leader, append, started)
 
 	// Find the group message
 	var groupMessage = null;
-	var messages = await channelGroups.messages.fetch({limit: 20});
+	var messages = await channelGroups.messages.fetch({limit: 10});
 	var messagesArray = Array.from(messages.values());
 	for (var i = 0; i < messagesArray.length; ++i)
 	{
