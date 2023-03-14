@@ -759,17 +759,17 @@ async function processEpics()
 			result += `${i + 1}. ${epic.name} in ${epic.area} at ${epic.continent}\n`;
 		}
 
+		// Post new messages with the epics' status
+		sendMessage(channelEpics, result);		
+
+		// Delete old messages
 		var messages = await channelEpics.messages.fetch();
 		var messagesArray = Array.from(messages.values());
 
-		// Delete old messages
 		for (var i = 0; i < messagesArray.length; ++i)
 		{
 			messagesArray[i].delete();
 		}
-
-		// Post new messages with the epics' status
-		sendMessage(channelEpics, result);		
 	}
 
 	status.epics = newEpics;
