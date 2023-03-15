@@ -21,7 +21,7 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 	}
 
 	runIntervalInMs(): number {
-		return 1 * 60 * 1000;
+		return 5 * 60 * 1000;
 	}
 
 	async appendAndRepostMessage(leader: string, append: string, started: number): Promise<void> {
