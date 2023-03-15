@@ -1,5 +1,4 @@
 import moment from "moment-timezone";
-import { is } from 'typescript-is';
 
 global.XMLHttpRequest = require("xhr2");
 
