@@ -110,9 +110,14 @@ export abstract class BaseProcessorImpl<StatusType> extends BaseProcessor {
 	}
 
 	async makeChannelWhite(): Promise<void> {
-		// Post and delete something just to make the channel white
-		var msg = await this.channel.send("something");
-		await msg.delete();
+		try {
+			// Post and delete something just to make the channel white
+			var msg = await this.channel.send("something");
+			await msg.delete();
+		}
+		catch (err: any) {
+			this.logError(err);
+		}
 	}
 
 	async sendMessage(message: string): Promise<Message<true>> {
