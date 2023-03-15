@@ -1,7 +1,6 @@
 import { Client } from "discord.js";
 import { JSDOM } from "jsdom";
 import { BaseProcessorImpl } from "./BaseProcessor";
-import { Utility } from "./Utility";
 
 class Epic {
 	name: string;

@@ -21,7 +21,7 @@ export class ForumProcessor extends BaseProcessorImpl<Post[]>
 		return 5 * 60 * 1000;
 	}
 
-	reportNewPost(newPost: Post) {
+	async reportNewPost(newPost: Post): Promise<void> {
 		this.sendMessage(`[${newPost.poster}](${newPost.posterLink}) made a new post in the thread '[${newPost.threadName}](${newPost.threadLink})'`);
 	}
 
@@ -93,12 +93,12 @@ export class ForumProcessor extends BaseProcessorImpl<Post[]>
 			// All posts before oldTopPostIndex are new
 			for (var i = 0; i < oldTopPostIndex; ++i) {
 				var newPost = newPosts[i];
-				this.reportNewPost(newPost);
+				await this.reportNewPost(newPost);
 			}
 
 			// If poster has changed then the post is new too
 			if (newPosts[oldTopPostIndex].poster != oldTopPost.poster) {
-				this.reportNewPost(newPosts[oldTopPostIndex]);
+				await this.reportNewPost(newPosts[oldTopPostIndex]);
 			}
 		}
 

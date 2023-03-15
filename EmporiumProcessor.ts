@@ -25,12 +25,12 @@ export class EmporiumProcessor extends BaseProcessorImpl<{ [seller: string]: Auc
 		return `[${name}](http://slothmudeq.ml/?search=${encodeURI(name)})`;
 	}
 
-	reportNewItem(seller: string, name: string, price: string, buyout: string, ends: string): void {
+	async reportNewItem(seller: string, name: string, price: string, buyout: string, ends: string): Promise<void> {
 		var link = EmporiumProcessor.buildItemLink(name);
 		this.sendMessage(`${seller} has put '${link}' on sale. Price/buyout is ${price}/${buyout}. The sale ends in ${ends}.`);
 	}
 
-	reportSoldItem(seller: string, name: string, bidder: string, price: string): void {
+	async reportSoldItem(seller: string, name: string, bidder: string, price: string): Promise<void> {
 		var link = EmporiumProcessor.buildItemLink(name);
 
 		if (bidder.toLowerCase() == "nobody") {
@@ -137,7 +137,7 @@ export class EmporiumProcessor extends BaseProcessorImpl<{ [seller: string]: Auc
 					var sellerData = newAuctions[seller];
 					for (var i = 0; i < sellerData.length; ++i) {
 						var item = sellerData[i];
-						this.reportNewItem(seller, item.name, item.price, item.buyout, item.ends);
+						await this.reportNewItem(seller, item.name, item.price, item.buyout, item.ends);
 					}
 				} else {
 					// Remove existing items
@@ -176,7 +176,7 @@ export class EmporiumProcessor extends BaseProcessorImpl<{ [seller: string]: Auc
 						var minutesLeft = this.convertEndsToMinutes(item.ends);
 						if (minutesLeft > 0 && minutesLeft <= 120 && !item.lastWarning) {
 							var link = EmporiumProcessor.buildItemLink(item.name);
-							this.sendMessage(`The auction for ${seller}'s item '${link}' will end in less than two hours.`);
+							await this.sendMessage(`The auction for ${seller}'s item '${link}' will end in less than two hours.`);
 							item.lastWarning = true;
 						}
 
@@ -184,17 +184,17 @@ export class EmporiumProcessor extends BaseProcessorImpl<{ [seller: string]: Auc
 							continue;
 						}
 
-						this.reportNewItem(seller, item.name, item.price, item.buyout, item.ends);
+						await this.reportNewItem(seller, item.name, item.price, item.buyout, item.ends);
 					}
 
-					// Report remainng old items as sold
+					// Report remaining old items as sold
 					for (var i = 0; i < oldData.length; ++i) {
 						if (i in oldDataSameIndices) {
 							continue;
 						}
 
 						var item = oldData[i];
-						this.reportSoldItem(seller, item.name, item.bidder, item.price);
+						await this.reportSoldItem(seller, item.name, item.bidder, item.price);
 					}
 				}
 			}
@@ -205,7 +205,7 @@ export class EmporiumProcessor extends BaseProcessorImpl<{ [seller: string]: Auc
 					var items = this.status[seller];
 					for (var i = 0; i < items.length; ++i) {
 						var item = items[i];
-						this.reportSoldItem(seller, item.name, item.bidder, item.price);
+						await this.reportSoldItem(seller, item.name, item.bidder, item.price);
 					}
 				}
 			}
