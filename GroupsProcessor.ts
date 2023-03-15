@@ -24,7 +24,7 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 		return 5 * 60 * 1000;
 	}
 
-	async appendAndRepostMessage(leader: string, append: string, started: number): Promise<void> {
+	async appendMessage(leader: string, append: string, started: number): Promise<void> {
 		this.logInfo(`appendAndReportMessage for the group of ${leader}: ${append}`);
 
 		// Find the group message
@@ -70,18 +70,11 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 
 		desc += ` ${append}`;
 
+		// Edit the group message
 		const newEmbed = new EmbedBuilder().setDescription(desc);
+		await groupMessage.edit({ embeds: [newEmbed] });
 
-		// post new one
-		await this.channel.send({ embeds: [newEmbed] });
-
-		// delete original message
-		try {
-			await groupMessage.delete();
-		}
-		catch (err: any) {
-			this.logError(err);
-		}
+		await this.makeChannelWhite();
 	}
 
 
@@ -164,7 +157,7 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 						for (var i = 0; i < oldGroup.adventurers.length; ++i) {
 							if (oldGroup.adventurers[i] == newLeader && Math.abs(newGroups[newLeader].adventurers.length - oldGroup.adventurers.length) <= 3) {
 								// Leader change
-								await this.appendAndRepostMessage(oldGroup.initialLeader, `The new leader is ${newLeader}.`, oldGroup.started);
+								await this.appendMessage(oldGroup.initialLeader, `The new leader is ${newLeader}.`, oldGroup.started);
 								newGroups[newLeader].initialLeader = oldGroup.initialLeader;
 								newGroups[newLeader].started = oldGroup.started;
 								leaderChanges[newLeader] = true;
@@ -174,7 +167,7 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 					}
 
 					if (!changedLeader) {
-						await this.appendAndRepostMessage(oldGroup.initialLeader, `The group is over.`, oldGroup.started);
+						await this.appendMessage(oldGroup.initialLeader, `The group is over.`, oldGroup.started);
 					}
 				}
 			}
@@ -185,24 +178,24 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 				if (!(leader in this.status)) {
 					if (!(leader in leaderChanges)) {
 						newGroup.started = new Date().getTime();
-						await this.sendMessage(`(${Utility.formatCurrentTime()} PST) ${leader} has started group '${newGroup.name}'. Group consists of ${newGroup.adventurers.length} adventurers.`)
+						await this.sendMessage(`${leader} has started group '${newGroup.name}'. Group consists of ${newGroup.adventurers.length} adventurers.`)
 					}
 				} else {
 					var oldGroup = this.status[leader];
 
 					if (oldGroup.name != newGroup.name) {
-						await this.appendAndRepostMessage(oldGroup.initialLeader, `${leader} has changed group name to '${newGroup.name}'`, oldGroup.started);
+						await this.appendMessage(oldGroup.initialLeader, `${leader} has changed group name to '${newGroup.name}'`, oldGroup.started);
 					}
 
 					var oldSizeDivided = Math.floor(oldGroup.adventurers.length / 4);
 					var newSizeDivided = Math.floor(newGroup.adventurers.length / 4);
 
 					if (newSizeDivided > oldSizeDivided) {
-						await this.appendAndRepostMessage(oldGroup.initialLeader, `The group has became bigger. Now it has as many as ${newGroup.adventurers.length} adventurers.`, oldGroup.started);
+						await this.appendMessage(oldGroup.initialLeader, `The group has became bigger. Now it has as many as ${newGroup.adventurers.length} adventurers.`, oldGroup.started);
 					}
 
 					if (newSizeDivided < oldSizeDivided) {
-						await this.appendAndRepostMessage(oldGroup.initialLeader, `The group has became smaller. Now it has only ${newGroup.adventurers.length} adventurers.`, oldGroup.started);
+						await this.appendMessage(oldGroup.initialLeader, `The group has became smaller. Now it has only ${newGroup.adventurers.length} adventurers.`, oldGroup.started);
 					}
 				}
 			}
