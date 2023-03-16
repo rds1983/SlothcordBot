@@ -187,6 +187,7 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 								newGroup.initialLeader = oldGroup.initialLeader;
 								newGroup.started = oldGroup.started;
 								leaderChanges[newLeader] = true;
+								break;
 							}
 						}
 					}
