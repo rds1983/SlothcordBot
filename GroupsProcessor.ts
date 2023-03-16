@@ -154,14 +154,39 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 					// Check for the leader change
 					var changedLeader = false;
 					for (var newLeader in newGroups) {
-						for (var i = 0; i < oldGroup.adventurers.length; ++i) {
-							if (oldGroup.adventurers[i] == newLeader && Math.abs(newGroups[newLeader].adventurers.length - oldGroup.adventurers.length) <= 3) {
+						var newGroup = newGroups[newLeader];
+
+						// Firstly check that the new group size is relatively similar to the old one
+						var sizeDelta = Math.abs(newGroup.adventurers.length - oldGroup.adventurers.length);
+						if (sizeDelta <= 3) {
+							// Now check whether the leader of the old group is one of the adventurers in the new group
+							for (var i = 0; i < newGroup.adventurers.length; ++i) {
+								if (newGroup.adventurers[i] == leader ) {
+									this.logInfo(`Leader ${leader} of the old group is one of the adventurers of the new group.`)
+									changedLeader = true;
+									break;
+								}
+							}
+
+							if (!changedLeader)
+							{
+								// Finally check whether the leader of the new group is one of the adventurers of the old group
+								for (var i = 0; i < oldGroup.adventurers.length; ++i) {
+									if (oldGroup.adventurers[i] == newLeader) {
+										this.logInfo(`Leader ${newLeader} of the new group was one of the adventurers of the old group.`)
+										changedLeader = true;
+										break;
+									}
+								}
+							}
+
+							if (changedLeader)
+							{
 								// Leader change
 								await this.appendMessage(oldGroup.initialLeader, `The new leader is ${newLeader}.`, oldGroup.started);
-								newGroups[newLeader].initialLeader = oldGroup.initialLeader;
-								newGroups[newLeader].started = oldGroup.started;
+								newGroup.initialLeader = oldGroup.initialLeader;
+								newGroup.started = oldGroup.started;
 								leaderChanges[newLeader] = true;
-								changedLeader = true;
 							}
 						}
 					}
