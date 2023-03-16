@@ -28,23 +28,23 @@ export class ForumProcessor extends BaseProcessorImpl<Post[]>
 	async internalProcess(): Promise<void> {
 		this.logInfo("Checking forum...");
 
-		var data = await this.loadPage("http://www.slothmud.org/wp/");
+		let data = await this.loadPage("http://www.slothmud.org/wp/");
 		const dom = new JSDOM(data);
-		var document = dom.window.document;
+		let document = dom.window.document;
 
-		var all = document.getElementsByTagName("tr");
-		var foundHeader = false;
+		let all = document.getElementsByTagName("tr");
+		let foundHeader = false;
 
-		var newPosts = [];
-		for (var i = 0; i < all.length; i++) {
-			var children = all[i].childNodes;
+		let newPosts = [];
+		for (let i = 0; i < all.length; i++) {
+			let children = all[i].childNodes;
 
 			if (children.length < 1) {
 				continue;
 			}
 
 			// Check if it's group header row
-			var td = children[0];
+			let td = children[0];
 
 			if (!foundHeader) {
 				if (td.textContent.includes("Last Forum Posts")) {
@@ -53,15 +53,15 @@ export class ForumProcessor extends BaseProcessorImpl<Post[]>
 				}
 			} else {
 				if (children.length == 4) {
-					var threadName = children[0].textContent.trim();
-					var anchor = <HTMLAnchorElement>Utility.FindChild(children[0], n => "href" in n);
-					var threadLink = anchor != null ? anchor.href : "";
-					var poster = children[1].textContent.trim();
+					let threadName = children[0].textContent.trim();
+					let anchor = <HTMLAnchorElement>Utility.FindChild(children[0], n => "href" in n);
+					let threadLink = anchor != null ? anchor.href : "";
+					let poster = children[1].textContent.trim();
 
 					anchor = <HTMLAnchorElement>Utility.FindChild(children[1], n => "href" in n);
-					var posterLink = anchor != null ? anchor.href : "";
+					let posterLink = anchor != null ? anchor.href : "";
 
-					var newPost: Post =
+					let newPost: Post =
 					{
 						threadName: threadName,
 						threadLink: threadLink,
@@ -77,10 +77,10 @@ export class ForumProcessor extends BaseProcessorImpl<Post[]>
 		}
 
 		if (this.status != null) {
-			var oldTopPost = this.status[0];
-			var oldTopPostIndex = 0;
-			for (var i = 0; i < newPosts.length; ++i) {
-				var newPost = newPosts[i];
+			let oldTopPost = this.status[0];
+			let oldTopPostIndex = 0;
+			for (let i = 0; i < newPosts.length; ++i) {
+				let newPost = newPosts[i];
 
 				if (newPost.threadName == oldTopPost.threadName) {
 					oldTopPostIndex = i;
@@ -91,8 +91,8 @@ export class ForumProcessor extends BaseProcessorImpl<Post[]>
 			this.logInfo(`oldTopPostIndex: ${oldTopPostIndex}`);
 
 			// All posts before oldTopPostIndex are new
-			for (var i = 0; i < oldTopPostIndex; ++i) {
-				var newPost = newPosts[i];
+			for (let i = 0; i < oldTopPostIndex; ++i) {
+				let newPost = newPosts[i];
 				await this.reportNewPost(newPost);
 			}
 

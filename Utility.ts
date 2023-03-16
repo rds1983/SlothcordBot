@@ -30,7 +30,7 @@ export class Utility {
     }
 
     static formatTwoDigits(num: number) {
-        var result = `${num}`;
+        let result = `${num}`;
 
         if (num < 10) {
             result = '0' + result;
@@ -56,8 +56,8 @@ export class Utility {
             return null;
         }
 
-        for (var i = 0; i < node.childNodes.length; ++i) {
-            var n = node.childNodes[i];
+        for (let i = 0; i < node.childNodes.length; ++i) {
+            let n = node.childNodes[i];
             if (check(n)) {
                 return n;
             }

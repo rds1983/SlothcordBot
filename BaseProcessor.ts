@@ -42,7 +42,7 @@ export abstract class BaseProcessorImpl<StatusType> extends BaseProcessor {
 		this.status = this.loadStatus();
 
 		this.channel = <TextChannel>client.channels.cache.find(c => {
-			var gc = <TextChannel>c;
+			let gc = <TextChannel>c;
 			return gc.name === this.getChannelName();
 		});
 
@@ -75,18 +75,18 @@ export abstract class BaseProcessorImpl<StatusType> extends BaseProcessor {
 
 	async loadPage(url: string): Promise<string> {
 		this.logInfo(`Fetching data at url "${url}"`);
-		var request = await Utility.makeRequest('get', url);
+		let request = await Utility.makeRequest('get', url);
 
 		return request;
 	}
 
 	loadStatus(): StatusType {
-		var statusFileName = this.getStatusFileName();
+		let statusFileName = this.getStatusFileName();
 		if (fs.existsSync(statusFileName)) {
 			try {
 				this.logInfo(`Status file ${statusFileName} was found.`);
 
-				var data = fs.readFileSync(statusFileName);
+				let data = fs.readFileSync(statusFileName);
 				return JSON.parse(data);
 			}
 			catch (err: any) {
@@ -100,11 +100,11 @@ export abstract class BaseProcessorImpl<StatusType> extends BaseProcessor {
 	}
 
 	saveStatus(): void {
-		var statusFileName = this.getStatusFileName();
+		let statusFileName = this.getStatusFileName();
 
 		// Save new status
 		this.logInfo(`Saving new status ${statusFileName}...`);
-		var json = JSON.stringify(this.status, null, 2);
+		let json = JSON.stringify(this.status, null, 2);
 
 		fs.writeFileSync(statusFileName, json, 'utf8');
 	}
@@ -112,7 +112,7 @@ export abstract class BaseProcessorImpl<StatusType> extends BaseProcessor {
 	async makeChannelWhite(): Promise<void> {
 		try {
 			// Post and delete something just to make the channel white
-			var msg = await this.channel.send("something");
+			let msg = await this.channel.send("something");
 			await msg.delete();
 		}
 		catch (err: any) {

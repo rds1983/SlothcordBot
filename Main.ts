@@ -7,7 +7,7 @@ import { GroupsProcessor } from "./GroupsProcessor";
 
 const config = require('./config.json');
 
-var processors: BaseProcessor[] = [];
+let processors: BaseProcessor[] = [];
 
 const client = new Client({
 	intents: [
@@ -23,7 +23,7 @@ client.on("ready", () => {
 	processors.push(new EmporiumProcessor(client));
 	processors.push(new ForumProcessor(client));
 
-	for (var i = 0; i < processors.length; ++i) {
+	for (let i = 0; i < processors.length; ++i) {
 		processors[i].start();
 	}
 });

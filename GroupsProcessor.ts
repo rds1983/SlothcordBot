@@ -28,15 +28,15 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 		this.logInfo(`appendAndReportMessage for the group of ${leader}: ${append}`);
 
 		// Find the group message
-		var groupMessage = null;
-		var messages = await this.channel.messages.fetch({ limit: 10 });
-		var messagesArray = Array.from(messages.values());
-		for (var i = 0; i < messagesArray.length; ++i) {
-			var message = messagesArray[i];
+		let groupMessage = null;
+		let messages = await this.channel.messages.fetch({ limit: 10 });
+		let messagesArray = Array.from(messages.values());
+		for (let i = 0; i < messagesArray.length; ++i) {
+			let message = messagesArray[i];
 			if (message.embeds.length == 0) {
 				continue;
 			}
-			var embed = message.embeds[0];
+			let embed = message.embeds[0];
 
 			if (embed.description.includes(`${leader} has started`)) {
 				groupMessage = message;
@@ -50,17 +50,17 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 			return;
 		}
 
-		var embed = groupMessage.embeds[0];
+		let embed = groupMessage.embeds[0];
 
-		var desc = embed.description;
+		let desc = embed.description;
 
 		desc += "\n";
 		if (started != null) {
-			var diff = new Date().getTime() - started;
-			var hours = Math.floor(diff / (1000 * 60 * 60));
+			let diff = new Date().getTime() - started;
+			let hours = Math.floor(diff / (1000 * 60 * 60));
 			diff -= hours * (1000 * 60 * 60);
 
-			var mins = Math.floor(diff / (1000 * 60));
+			let mins = Math.floor(diff / (1000 * 60));
 			diff -= mins * (1000 * 60);
 
 			desc += `(+${Utility.formatTwoDigits(hours)}:${Utility.formatTwoDigits(mins)})`;
@@ -79,29 +79,29 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 
 
 	async internalProcess(): Promise<void> {
-		var data = await this.loadPage("http://www.slothmud.org/wp/live-info/adventuring-parties");
-		var dom = new JSDOM(data);
-		var document = dom.window.document;
+		let data = await this.loadPage("http://www.slothmud.org/wp/live-info/adventuring-parties");
+		let dom = new JSDOM(data);
+		let document = dom.window.document;
 
-		var all = document.getElementsByTagName("tr");
-		var newGroups: { [leader: string]: Group } = {};
-		var group: Group = null;
-		for (var i = 0; i < all.length; i++) {
-			var children = all[i].childNodes;
+		let all = document.getElementsByTagName("tr");
+		let newGroups: { [leader: string]: Group } = {};
+		let group: Group = null;
+		for (let i = 0; i < all.length; i++) {
+			let children = all[i].childNodes;
 
 			// Check if it's group header row
-			var td = children[0];
+			let td = children[0];
 			if ("colSpan" in td && td.colSpan == "3") {
-				var re = /(\w+) is leading '(.*)' /;
-				var m = re.exec(td.textContent);
+				let re = /(\w+) is leading '(.*)' /;
+				let m = re.exec(td.textContent);
 				if (m) {
 					// Store last group
 					if (group != null) {
 						newGroups[group.leader] = group;
 					}
 
-					var name = m[2];
-					var leader = m[1];
+					let name = m[2];
+					let leader = m[1];
 
 					group =
 					{
@@ -134,10 +134,10 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 
 		if (this.status != null) {
 			// Update initial leaders
-			for (var leader in newGroups) {
-				var newGroup = newGroups[leader];
+			for (let leader in newGroups) {
+				let newGroup = newGroups[leader];
 				if (leader in this.status) {
-					var oldGroup = this.status[leader];
+					let oldGroup = this.status[leader];
 					newGroup.initialLeader = oldGroup.initialLeader;
 
 					if ("started" in oldGroup) {
@@ -147,20 +147,20 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 			}
 
 			// Check for groups that were over or had changed the leader
-			var leaderChanges: { [leader: string]: boolean } = {};
-			for (var leader in this.status) {
-				var oldGroup = this.status[leader];
+			let leaderChanges: { [leader: string]: boolean } = {};
+			for (let leader in this.status) {
+				let oldGroup = this.status[leader];
 				if (!(leader in newGroups)) {
 					// Check for the leader change
-					var changedLeader = false;
-					for (var newLeader in newGroups) {
-						var newGroup = newGroups[newLeader];
+					let changedLeader = false;
+					for (let newLeader in newGroups) {
+						let newGroup = newGroups[newLeader];
 
 						// Firstly check that the new group size is relatively similar to the old one
-						var sizeDelta = Math.abs(newGroup.adventurers.length - oldGroup.adventurers.length);
+						let sizeDelta = Math.abs(newGroup.adventurers.length - oldGroup.adventurers.length);
 						if (sizeDelta <= 3) {
 							// Now check whether the leader of the old group is one of the adventurers in the new group
-							for (var i = 0; i < newGroup.adventurers.length; ++i) {
+							for (let i = 0; i < newGroup.adventurers.length; ++i) {
 								if (newGroup.adventurers[i] == leader ) {
 									this.logInfo(`Leader ${leader} of the old group is one of the adventurers of the new group.`)
 									changedLeader = true;
@@ -171,7 +171,7 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 							if (!changedLeader)
 							{
 								// Finally check whether the leader of the new group is one of the adventurers of the old group
-								for (var i = 0; i < oldGroup.adventurers.length; ++i) {
+								for (let i = 0; i < oldGroup.adventurers.length; ++i) {
 									if (oldGroup.adventurers[i] == newLeader) {
 										this.logInfo(`Leader ${newLeader} of the new group was one of the adventurers of the old group.`)
 										changedLeader = true;
@@ -198,22 +198,22 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 			}
 
 			// Check for new and renamed groups
-			for (var leader in newGroups) {
-				var newGroup = newGroups[leader];
+			for (let leader in newGroups) {
+				let newGroup = newGroups[leader];
 				if (!(leader in this.status)) {
 					if (!(leader in leaderChanges)) {
 						newGroup.started = new Date().getTime();
 						await this.sendMessage(`${leader} has started group '${newGroup.name}'. Group consists of ${newGroup.adventurers.length} adventurers.`)
 					}
 				} else {
-					var oldGroup = this.status[leader];
+					let oldGroup = this.status[leader];
 
 					if (oldGroup.name != newGroup.name) {
 						await this.appendMessage(oldGroup.initialLeader, `${leader} has changed group name to '${newGroup.name}'`, oldGroup.started);
 					}
 
-					var oldSizeDivided = Math.floor(oldGroup.adventurers.length / 4);
-					var newSizeDivided = Math.floor(newGroup.adventurers.length / 4);
+					let oldSizeDivided = Math.floor(oldGroup.adventurers.length / 4);
+					let newSizeDivided = Math.floor(newGroup.adventurers.length / 4);
 
 					if (newSizeDivided > oldSizeDivided) {
 						await this.appendMessage(oldGroup.initialLeader, `The group has became bigger. Now it has as many as ${newGroup.adventurers.length} adventurers.`, oldGroup.started);
@@ -227,8 +227,8 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 		}
 
 		// Log groups
-		for (var leader in newGroups) {
-			var newGroup = newGroups[leader];
+		for (let leader in newGroups) {
+			let newGroup = newGroups[leader];
 			this.logInfo(Utility.toString(newGroup));
 		}
 

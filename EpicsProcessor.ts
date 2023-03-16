@@ -25,17 +25,17 @@ export class EpicsProcessor extends BaseProcessorImpl<Epic[]>
 	async internalProcess(): Promise<void> {
 		this.logInfo("Checking epics...");
 
-		var data = await this.loadPage("http://www.slothmud.org/support/mapserver2.php?filter=all");
-		var dom = new JSDOM(data);
-		var document = dom.window.document;
+		let data = await this.loadPage("http://www.slothmud.org/support/mapserver2.php?filter=all");
+		let dom = new JSDOM(data);
+		let document = dom.window.document;
 
-		var newEpics = [];
-		var all = document.getElementsByTagName("div");
-		for (var i = 0; i < all.length; i++) {
-			var div = all[i];
+		let newEpics = [];
+		let all = document.getElementsByTagName("div");
+		for (let i = 0; i < all.length; i++) {
+			let div = all[i];
 
-			var area = div.getAttribute("area");
-			var continent = div.getAttribute("continent");
+			let area = div.getAttribute("area");
+			let continent = div.getAttribute("continent");
 
 			if (area == null || continent == null) {
 				continue;
@@ -50,11 +50,11 @@ export class EpicsProcessor extends BaseProcessorImpl<Epic[]>
 				continue;
 			}
 
-			var name = div.textContent;
+			let name = div.textContent;
 
 			this.logInfo(`${name}; ${area}; ${continent}`);
 
-			var epic: Epic =
+			let epic: Epic =
 			{
 				name: name,
 				area: area,
@@ -64,15 +64,15 @@ export class EpicsProcessor extends BaseProcessorImpl<Epic[]>
 			newEpics.push(epic);
 		}
 
-		var changed = false;
+		let changed = false;
 
 		if (this.status != null) {
 			// Report new epics
-			for (var i = 0; i < newEpics.length; ++i) {
-				var newEpic = newEpics[i];
-				var found = false;
-				for (var j = 0; j < this.status.length; ++j) {
-					var oldEpic = this.status[j];
+			for (let i = 0; i < newEpics.length; ++i) {
+				let newEpic = newEpics[i];
+				let found = false;
+				for (let j = 0; j < this.status.length; ++j) {
+					let oldEpic = this.status[j];
 
 					if (newEpic.name == oldEpic.name) {
 						found = true;
@@ -86,11 +86,11 @@ export class EpicsProcessor extends BaseProcessorImpl<Epic[]>
 			}
 
 			// Report killed epics
-			for (var i = 0; i < this.status.length; ++i) {
-				var oldEpic = this.status[i];
-				var found = false;
-				for (var j = 0; j < newEpics.length; ++j) {
-					var newEpic = newEpics[j];
+			for (let i = 0; i < this.status.length; ++i) {
+				let oldEpic = this.status[i];
+				let found = false;
+				for (let j = 0; j < newEpics.length; ++j) {
+					let newEpic = newEpics[j];
 
 					if (newEpic.name == oldEpic.name) {
 						found = true;
@@ -107,22 +107,22 @@ export class EpicsProcessor extends BaseProcessorImpl<Epic[]>
 		}
 
 		if (changed) {
-			var result = "";
-			for (var i = 0; i < newEpics.length; ++i) {
-				var epic = newEpics[i];
+			let result = "";
+			for (let i = 0; i < newEpics.length; ++i) {
+				let epic = newEpics[i];
 				result += `${i + 1}. ${epic.name} in ${epic.area} at ${epic.continent}\n`;
 			}
 
 			// Fetch old messages
-			var messages = await this.channel.messages.fetch();
-			var messagesArray = Array.from(messages.values());
+			let messages = await this.channel.messages.fetch();
+			let messagesArray = Array.from(messages.values());
 
 			// Post new messages with the epics' status
 			await this.sendMessage(result);
 
 			// Delete old messages
 			try {
-				for (var i = 0; i < messagesArray.length; ++i) {
+				for (let i = 0; i < messagesArray.length; ++i) {
 					await messagesArray[i].delete();
 				}
 			}
