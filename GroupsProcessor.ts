@@ -171,7 +171,11 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 						this.logInfo(`Amount of matches for ${oldLeader}/${newLeader}: ${matches}`);
 
 						// If rate of matches >= 0.6 for both groups, then it's the leader change
-						if (matches / oldGroup.adventurers.length >= 0.6 && matches / newGroup.adventurers.length >= 0.6) {
+						var oldRate = matches / oldGroup.adventurers.length;
+						var newRate = matches / newGroup.adventurers.length;
+						this.logInfo(`Old rate/new rate: ${oldRate}/${newRate}`);
+
+						if (oldRate >= 0.6 && newRate >= 0.6) {
 							changedLeader = true;
 							newGroup.initialLeader = oldGroup.initialLeader;
 							newGroup.started = oldGroup.started;
