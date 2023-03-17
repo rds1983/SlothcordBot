@@ -147,10 +147,11 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 			}
 
 			// Check for groups that were over or had changed the leader
-			let leaderChanges: { [leader: string]: boolean } = {};
+			let leaderChanges: { [leader: string]: string } = {};
 			for (let oldLeader in this.status) {
 				let oldGroup = this.status[oldLeader];
 				if (!(oldLeader in newGroups)) {
+
 					// Check for the leader change
 					let changedLeader = false;
 					for (let newLeader in newGroups) {
@@ -174,7 +175,7 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 							changedLeader = true;
 							newGroup.initialLeader = oldGroup.initialLeader;
 							newGroup.started = oldGroup.started;
-							leaderChanges[newLeader] = true;
+							leaderChanges[oldLeader] = newLeader;
 							await this.appendMessage(oldGroup.initialLeader, `The new leader is ${newLeader}.`, oldGroup.started);
 							break;
 						}
@@ -186,14 +187,20 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 				}
 			}
 
+			// Update old groups with the leader changes
+			for (let oldLeader in leaderChanges) {
+				let newLeader = leaderChanges[oldLeader];
+				let oldGroup = this.status[oldLeader];
+				delete this.status[oldLeader];
+				this.status[newLeader] = oldGroup;
+			}
+
 			// Check for new and renamed groups
 			for (let newLeader in newGroups) {
 				let newGroup = newGroups[newLeader];
 				if (!(newLeader in this.status)) {
-					if (!(newLeader in leaderChanges)) {
-						newGroup.started = new Date().getTime();
-						await this.sendMessage(`${newLeader} has started group '${newGroup.name}'. Group consists of ${newGroup.adventurers.length} adventurers.`)
-					}
+					newGroup.started = new Date().getTime();
+					await this.sendMessage(`${newLeader} has started group '${newGroup.name}'. Group consists of ${newGroup.adventurers.length} adventurers.`)
 				} else {
 					let oldGroup = this.status[newLeader];
 
