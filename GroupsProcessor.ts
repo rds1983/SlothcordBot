@@ -170,8 +170,8 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 
 						this.logInfo(`Amount of matches for ${oldLeader}/${newLeader}: ${matches}`);
 
-						// If more than half of the old group is in the new one, then it means the leader is changed
-						if (matches >= oldGroup.adventurers.length / 2) {
+						// If rate of matches >= 0.5 for both groups, then it's the leader change
+						if (matches / oldGroup.adventurers.length >= 0.5 && matches / newGroup.adventurers.length >= 0.5) {
 							changedLeader = true;
 							newGroup.initialLeader = oldGroup.initialLeader;
 							newGroup.started = oldGroup.started;
