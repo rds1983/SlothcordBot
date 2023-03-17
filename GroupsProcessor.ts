@@ -156,39 +156,27 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 					for (let newLeader in newGroups) {
 						let newGroup = newGroups[newLeader];
 
-						// Firstly check that the new group size is relatively similar to the old one
-						let sizeDelta = Math.abs(newGroup.adventurers.length - oldGroup.adventurers.length);
-						if (sizeDelta <= 3) {
-							// Now check whether the leader of the old group is one of the adventurers in the new group
-							for (let i = 0; i < newGroup.adventurers.length; ++i) {
-								if (newGroup.adventurers[i] == oldLeader ) {
-									this.logInfo(`Leader ${oldLeader} of the old group is one of the adventurers of the new group.`)
-									changedLeader = true;
-									break;
+						let matches = 0;
+
+						// Calculate how many adventurers from the old group presents in the new group
+						for (let i = 0; i < oldGroup.adventurers.length; ++i) {
+							for (let j = 0; j < newGroup.adventurers.length; ++j) {
+								if (oldGroup.adventurers[i] == newGroup.adventurers[j]) {
+									++matches;
 								}
 							}
+						}
 
-							if (!changedLeader)
-							{
-								// Finally check whether the leader of the new group is one of the adventurers of the old group
-								for (let i = 0; i < oldGroup.adventurers.length; ++i) {
-									if (oldGroup.adventurers[i] == newLeader) {
-										this.logInfo(`Leader ${newLeader} of the new group was one of the adventurers of the old group.`)
-										changedLeader = true;
-										break;
-									}
-								}
-							}
+						this.logInfo(`Amount of matches for ${oldLeader}/${newLeader}: ${matches}`);
 
-							if (changedLeader)
-							{
-								// Leader change
-								await this.appendMessage(oldGroup.initialLeader, `The new leader is ${newLeader}.`, oldGroup.started);
-								newGroup.initialLeader = oldGroup.initialLeader;
-								newGroup.started = oldGroup.started;
-								leaderChanges[newLeader] = true;
-								break;
-							}
+						// If more than half of the old group is in the new one, then it means the leader is changed
+						if (matches >= oldGroup.adventurers.length / 2) {
+							changedLeader = true;
+							newGroup.initialLeader = oldGroup.initialLeader;
+							newGroup.started = oldGroup.started;
+							leaderChanges[newLeader] = true;
+							await this.appendMessage(oldGroup.initialLeader, `The new leader is ${newLeader}.`, oldGroup.started);
+							break;
 						}
 					}
 
