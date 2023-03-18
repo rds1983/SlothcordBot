@@ -208,7 +208,8 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 				} else {
 					let oldGroup = this.status[newLeader];
 
-					if (oldGroup.name != newGroup.name) {
+					// Ignore group name changes caused by the leader change
+					if (oldGroup.name != newGroup.name && !Object.values(leaderChanges).includes(newLeader)) {
 						await this.appendMessage(oldGroup.initialLeader, `${newLeader} has changed group name to '${newGroup.name}'`, oldGroup.started);
 					}
 
