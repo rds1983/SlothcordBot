@@ -1,4 +1,5 @@
 import { Client, GatewayIntentBits } from "discord.js";
+import { AlertsProcessor } from "./AlertsProcessor";
 import { BaseProcessor } from "./BaseProcessor";
 import { EmporiumProcessor } from "./EmporiumProcessor";
 import { EpicsProcessor } from "./EpicsProcessor";
@@ -22,6 +23,7 @@ client.on("ready", () => {
 	processors.push(new EpicsProcessor(client));
 	processors.push(new EmporiumProcessor(client));
 	processors.push(new ForumProcessor(client));
+	processors.push(new AlertsProcessor(client));
 
 	for (let i = 0; i < processors.length; ++i) {
 		processors[i].start();
