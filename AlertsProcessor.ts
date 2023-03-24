@@ -157,7 +157,7 @@ export class AlertsProcessor extends BaseProcessorImpl<Event[]>
 
 				if (newPost.type == EventType.Death) {
 					await this.reportDeath(newPost);
-				} else if (newPost.type == EventType.Raise);
+				} else if (newPost.type == EventType.Raise)
 				{
 					await this.reportRaise(newPost.adventurer, newPost.doer);
 				}
