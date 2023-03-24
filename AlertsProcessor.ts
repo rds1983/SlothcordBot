@@ -16,12 +16,10 @@ class Event {
 }
 
 class EventParseInfo {
-	type: EventType;
 	regex: RegExp;
 	doerFirst: boolean;
 
-	constructor(type: EventType, regex: string, doerFirst: boolean) {
-		this.type = type;
+	constructor(regex: string, doerFirst: boolean) {
 		this.regex = new RegExp(regex, "s");
 		this.doerFirst = doerFirst;
 	}
@@ -31,37 +29,37 @@ export class AlertsProcessor extends BaseProcessorImpl<Event[]>
 {
 	private static readonly DeathParsers: EventParseInfo[] =
 		[
-			new EventParseInfo(EventType.Death, "(.+) handidly dispatched (\\w+) to to the next world\\.", true),
-			new EventParseInfo(EventType.Death, "(.+) mercilessly slaughtered (\\w+)\\.", true),
-			new EventParseInfo(EventType.Death, "(.+) mercilessly butchered (\\w+)\\.", true),
-			new EventParseInfo(EventType.Death, "(.+) obliterated (\\w+)\\.", true),
-			new EventParseInfo(EventType.Death, "(.+) annihilated (\\w+)\\.", true),
-			new EventParseInfo(EventType.Death, "(.+) defeated (\\w+)\\.", true),
-			new EventParseInfo(EventType.Death, "(.+) slew (\\w+)\\.", true),
-			new EventParseInfo(EventType.Death, "(.+) wasted (\\w+)\\.", true),
-			new EventParseInfo(EventType.Death, "(.+) crushed (\\w+) to a liveless pulp of blood and offals\\.", true),
-			new EventParseInfo(EventType.Death, "(\\w+) was slain by (.+)\\.", false),
-			new EventParseInfo(EventType.Death, "(\\w+) was defeated by (.+)\\.", false),
-			new EventParseInfo(EventType.Death, "(\\w+) was messily dispatched by (.+)\\.", false),
-			new EventParseInfo(EventType.Death, "(\\w+) was beaten down by (.+)\\.", false),
-			new EventParseInfo(EventType.Death, "(\\w+) naively fought (.+) and lost\\.", false),
-			new EventParseInfo(EventType.Death, "(\\w+) fought against (.+) and lost\\.", false)
+			new EventParseInfo("(.+) handidly dispatched (\\w+) to to the next world\\.", true),
+			new EventParseInfo("(.+) mercilessly slaughtered (\\w+)\\.", true),
+			new EventParseInfo("(.+) mercilessly butchered (\\w+)\\.", true),
+			new EventParseInfo("(.+) obliterated (\\w+)\\.", true),
+			new EventParseInfo("(.+) annihilated (\\w+)\\.", true),
+			new EventParseInfo("(.+) defeated (\\w+)\\.", true),
+			new EventParseInfo("(.+) slew (\\w+)\\.", true),
+			new EventParseInfo("(.+) wasted (\\w+)\\.", true),
+			new EventParseInfo("(.+) crushed (\\w+) to a liveless pulp of blood and offals\\.", true),
+			new EventParseInfo("(\\w+) was slain by (.+)\\.", false),
+			new EventParseInfo("(\\w+) was defeated by (.+)\\.", false),
+			new EventParseInfo("(\\w+) was messily dispatched by (.+)\\.", false),
+			new EventParseInfo("(\\w+) was beaten down by (.+)\\.", false),
+			new EventParseInfo("(\\w+) naively fought (.+) and lost\\.", false),
+			new EventParseInfo("(\\w+) fought against (.+) and lost\\.", false)
 		];
 
 	private static readonly RaiseParsers: EventParseInfo[] =
 		[
-			new EventParseInfo(EventType.Raise, "(\\w+) sold a piece of soul to the devil in exchange for (\\w+)'s worthless soul", true),
-			new EventParseInfo(EventType.Raise, "The clerical genius (\\w+) successfully raised (\\w+)\\.", true),
-			new EventParseInfo(EventType.Raise, "(\\w+)'s prayers were answered and (\\w+) was successfully raised\\.", true),
-			new EventParseInfo(EventType.Raise, "(\\w+) raised from the dead by (\\w+)\\.", false)
+			new EventParseInfo("(\\w+) sold a piece of soul to the devil in exchange for (\\w+)'s worthless soul", true),
+			new EventParseInfo("The clerical genius (\\w+) successfully raised (\\w+)\\.", true),
+			new EventParseInfo("(\\w+)'s prayers were answered and (\\w+) was successfully raised\\.", true),
+			new EventParseInfo("(\\w+) raised from the dead by (\\w+)\\.", false)
 		];
 
 	private static readonly ShockParsers: EventParseInfo[] =
 		[
-			new EventParseInfo(EventType.Shock, "(\\w+) shocked (\\w+)\\.", true),
-			new EventParseInfo(EventType.Shock, "(\\w+) knelt, prayed, and still managed to shock (\\w+)\\.", false),
-			new EventParseInfo(EventType.Shock, "(\\w+) was banished to ether by (\\w+)'s lack of raising ability\\.", false),
-			new EventParseInfo(EventType.Shock, "The gods liked (\\w+)'s soul so much that they want to keep it\\s+\\-\\s+(\\w+) was not convincing enough to cheat death.", false)
+			new EventParseInfo("(\\w+) shocked (\\w+)\\.", true),
+			new EventParseInfo("(\\w+) knelt, prayed, and still managed to shock (\\w+)\\.", true),
+			new EventParseInfo("(\\w+) was banished to ether by (\\w+)'s lack of raising ability\\.", false),
+			new EventParseInfo("The gods liked (\\w+)'s soul so much that they want to keep it\\s+\\-\\s+(\\w+) was not convincing enough to cheat death.", false)
 		];
 
 	constructor(client: Client) {
@@ -76,7 +74,7 @@ export class AlertsProcessor extends BaseProcessorImpl<Event[]>
 		return 30 * 1000;
 	}
 
-	private static processEventWithParser(parser: EventParseInfo, text: string, time: string, newEvents: Event[]): boolean {
+	private static processEventWithParser(type: EventType, parser: EventParseInfo, text: string, time: string, newEvents: Event[]): boolean {
 		let m = parser.regex.exec(text);
 		if (m) {
 			let adventurer: string;
@@ -91,7 +89,7 @@ export class AlertsProcessor extends BaseProcessorImpl<Event[]>
 
 			let newEvent: Event =
 			{
-				type: parser.type,
+				type: type,
 				adventurer: adventurer,
 				doer: doer,
 				time: time
@@ -105,9 +103,9 @@ export class AlertsProcessor extends BaseProcessorImpl<Event[]>
 		return false;
 	}
 
-	private static processEventWithParsers(parsers: EventParseInfo[], text: string, time: string, newEvents: Event[]): boolean {
+	private static processEventWithParsers(type: EventType, parsers: EventParseInfo[], text: string, time: string, newEvents: Event[]): boolean {
 		for (let i = 0; i < parsers.length; ++i) {
-			if (AlertsProcessor.processEventWithParser(parsers[i], text, time, newEvents)) {
+			if (AlertsProcessor.processEventWithParser(type, parsers[i], text, time, newEvents)) {
 				return true;
 			}
 		}
@@ -186,9 +184,9 @@ export class AlertsProcessor extends BaseProcessorImpl<Event[]>
 			let time = row.childNodes[0].textContent.trim();
 			let eventText = row.childNodes[1].textContent.trim();
 
-			if (!AlertsProcessor.processEventWithParsers(AlertsProcessor.DeathParsers, eventText, time, newEvents) &&
-				!AlertsProcessor.processEventWithParsers(AlertsProcessor.RaiseParsers, eventText, time, newEvents) &&
-				!AlertsProcessor.processEventWithParsers(AlertsProcessor.ShockParsers, eventText, time, newEvents)) {
+			if (!AlertsProcessor.processEventWithParsers(EventType.Death, AlertsProcessor.DeathParsers, eventText, time, newEvents) &&
+				!AlertsProcessor.processEventWithParsers(EventType.Raise, AlertsProcessor.RaiseParsers, eventText, time, newEvents) &&
+				!AlertsProcessor.processEventWithParsers(EventType.Shock, AlertsProcessor.ShockParsers, eventText, time, newEvents)) {
 				this.logInfo(`'${eventText}' neither death or raise or shock.`);
 			}
 		}
