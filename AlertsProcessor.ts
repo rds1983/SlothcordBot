@@ -113,8 +113,8 @@ export class AlertsProcessor extends BaseProcessorImpl<Event[]>
 		return false;
 	}
 
-	async reportDeath(newPost: Event): Promise<void> {
-		this.sendMessage(`${newPost.adventurer} was slain by ${newPost.doer}.`);
+	async reportDeath(event: Event): Promise<void> {
+		this.sendMessage(`${event.adventurer} was slain by ${event.doer}.`);
 	}
 
 	async reportRaise(adventurer: string, raiser: string): Promise<void> {
@@ -206,24 +206,24 @@ export class AlertsProcessor extends BaseProcessorImpl<Event[]>
 			this.logInfo(`oldTopEventIndex: ${oldTopEventIndex}`);
 
 			if (oldTopEventIndex != null) {
-				// All events before oldTopPostIndex are new
+				// All events before oldTopEventIndex are new
 				// First report deaths
 				for (let i = 0; i < oldTopEventIndex; ++i) {
-					let newPost = newEvents[i];
+					let newEvent = newEvents[i];
 
-					if (newPost.type == EventType.Death) {
-						await this.reportDeath(newPost);
+					if (newEvent.type == EventType.Death) {
+						await this.reportDeath(newEvent);
 					}
 				}
 
 				// Now report raises and shocks
 				for (let i = 0; i < oldTopEventIndex; ++i) {
-					let newPost = newEvents[i];
+					let newEvent = newEvents[i];
 
-					if (newPost.type == EventType.Raise) {
-						await this.reportRaise(newPost.adventurer, newPost.doer);
-					} else if (newPost.type == EventType.Shock) {
-						await this.reportShock(newPost.adventurer);
+					if (newEvent.type == EventType.Raise) {
+						await this.reportRaise(newEvent.adventurer, newEvent.doer);
+					} else if (newEvent.type == EventType.Shock) {
+						await this.reportShock(newEvent.adventurer);
 					}
 				}
 			} else {
