@@ -78,7 +78,7 @@ export class ForumProcessor extends BaseProcessorImpl<Post[]>
 
 		if (this.status != null) {
 			let oldTopPost = this.status[0];
-			let oldTopPostIndex = 0;
+			let oldTopPostIndex: number = null;
 			for (let i = 0; i < newPosts.length; ++i) {
 				let newPost = newPosts[i];
 
@@ -90,15 +90,19 @@ export class ForumProcessor extends BaseProcessorImpl<Post[]>
 
 			this.logInfo(`oldTopPostIndex: ${oldTopPostIndex}`);
 
-			// All posts before oldTopPostIndex are new
-			for (let i = 0; i < oldTopPostIndex; ++i) {
-				let newPost = newPosts[i];
-				await this.reportNewPost(newPost);
-			}
+			if (oldTopPostIndex != null) {
+				// All posts before oldTopPostIndex are new
+				for (let i = 0; i < oldTopPostIndex; ++i) {
+					let newPost = newPosts[i];
+					await this.reportNewPost(newPost);
+				}
 
-			// If poster has changed then the post is new too
-			if (newPosts[oldTopPostIndex].poster != oldTopPost.poster) {
-				await this.reportNewPost(newPosts[oldTopPostIndex]);
+				// If poster has changed then the post is new too
+				if (newPosts[oldTopPostIndex].poster != oldTopPost.poster) {
+					await this.reportNewPost(newPosts[oldTopPostIndex]);
+				}
+			} else {
+				this.logInfo(`WARNING: could not find oldTopPostIndex`);
 			}
 		}
 
