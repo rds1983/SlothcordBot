@@ -195,11 +195,11 @@ export class AlertsProcessor extends BaseProcessorImpl<Event[]>
 
 		if (this.status != null) {
 			let oldTopEvent = this.status[0];
-			let oldTopEventIndex = 0;
+			let oldTopEventIndex: number = null;
 			for (let i = 0; i < newEvents.length; ++i) {
-				let newPost = newEvents[i];
+				let newEvent = newEvents[i];
 
-				if (newPost.type == oldTopEvent.type && newPost.adventurer == oldTopEvent.adventurer && newPost.doer == oldTopEvent.doer) {
+				if (newEvent.type == oldTopEvent.type && newEvent.adventurer == oldTopEvent.adventurer && newEvent.doer == oldTopEvent.doer && newEvent.time == oldTopEvent.time) {
 					oldTopEventIndex = i;
 					break;
 				}
@@ -207,25 +207,29 @@ export class AlertsProcessor extends BaseProcessorImpl<Event[]>
 
 			this.logInfo(`oldTopEventIndex: ${oldTopEventIndex}`);
 
-			// All events before oldTopPostIndex are new
-			// First report deaths
-			for (let i = 0; i < oldTopEventIndex; ++i) {
-				let newPost = newEvents[i];
+			if (oldTopEventIndex != null) {
+				// All events before oldTopPostIndex are new
+				// First report deaths
+				for (let i = 0; i < oldTopEventIndex; ++i) {
+					let newPost = newEvents[i];
 
-				if (newPost.type == EventType.Death) {
-					await this.reportDeath(newPost);
+					if (newPost.type == EventType.Death) {
+						await this.reportDeath(newPost);
+					}
 				}
-			}
 
-			// Now report raises and shocks
-			for (let i = 0; i < oldTopEventIndex; ++i) {
-				let newPost = newEvents[i];
+				// Now report raises and shocks
+				for (let i = 0; i < oldTopEventIndex; ++i) {
+					let newPost = newEvents[i];
 
-				if (newPost.type == EventType.Raise) {
-					await this.reportRaise(newPost.adventurer, newPost.doer);
-				} else if (newPost.type == EventType.Shock) {
-					await this.reportShock(newPost.adventurer);
+					if (newPost.type == EventType.Raise) {
+						await this.reportRaise(newPost.adventurer, newPost.doer);
+					} else if (newPost.type == EventType.Shock) {
+						await this.reportShock(newPost.adventurer);
+					}
 				}
+			} else {
+				this.logInfo(`WARNING: could not find oldTopEventIndex`);
 			}
 		}
 
