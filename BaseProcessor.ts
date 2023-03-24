@@ -3,8 +3,6 @@ import { Logger } from "winston";
 import { Utility } from "./Utility";
 
 const fs = require('fs');
-const winston = require('winston');
-const { combine, timestamp, printf } = winston.format;
 
 export abstract class BaseProcessor {
 	abstract process(): void;
@@ -26,18 +24,7 @@ export abstract class BaseProcessorImpl<StatusType> extends BaseProcessor {
 	constructor(client: Client) {
 		super();
 
-		this.logger = winston.createLogger({
-			format: combine(
-				timestamp({
-					format: 'YYYY-MM-DD HH:mm:ss',
-				}),
-				printf((info: any) => `[${info.timestamp}] ${info.level}: ${info.message}`)
-			),
-			transports: [
-				new winston.transports.Console(),
-				new winston.transports.File({ filename: `log.${this.getName()}.txt`, json: false }),
-			],
-		});
+		this.logger = Utility.createLogger(this.getName());
 
 		this.status = this.loadStatus();
 

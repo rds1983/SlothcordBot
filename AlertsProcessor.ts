@@ -1,6 +1,7 @@
 import { Client, EmbedBuilder } from "discord.js";
 import { JSDOM } from "jsdom";
 import { BaseProcessorImpl } from "./BaseProcessor";
+import { Statistics } from "./Statistics";
 
 enum EventType {
 	Death,
@@ -213,6 +214,7 @@ export class AlertsProcessor extends BaseProcessorImpl<Event[]>
 
 					if (newEvent.type == EventType.Death) {
 						await this.reportDeath(newEvent);
+						Statistics.logDeath(newEvent.adventurer, newEvent.doer);
 					}
 				}
 
@@ -222,6 +224,7 @@ export class AlertsProcessor extends BaseProcessorImpl<Event[]>
 
 					if (newEvent.type == EventType.Raise) {
 						await this.reportRaise(newEvent.adventurer, newEvent.doer);
+						Statistics.logRaise(newEvent.adventurer, newEvent.doer);
 					} else if (newEvent.type == EventType.Shock) {
 						await this.reportShock(newEvent.adventurer);
 					}

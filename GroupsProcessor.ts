@@ -51,8 +51,6 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 			diff -= mins * (1000 * 60);
 
 			desc += `(+${Utility.formatTwoDigits(hours)}:${Utility.formatTwoDigits(mins)})`;
-		} else {
-			desc += `(${Utility.formatCurrentTime()})`;
 		}
 
 		desc += ` ${append}`;
