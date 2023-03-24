@@ -68,7 +68,7 @@ export class AlertsProcessor extends BaseProcessorImpl<Event[]>
 		let raiseMessage = await this.findMessage(`${adventurer} was slain by`);
 
 		if (raiseMessage == null) {
-			this.logInfo(`WARNING: could not find deatg message of ${adventurer}`);
+			this.logInfo(`WARNING: could not find death message of ${adventurer}`);
 			return;
 		} else {
 			this.logInfo(`Death message id: ${raiseMessage.id}`);
@@ -92,7 +92,7 @@ export class AlertsProcessor extends BaseProcessorImpl<Event[]>
 		let raiseMessage = await this.findMessage(`${adventurer} was slain by`);
 
 		if (raiseMessage == null) {
-			this.logInfo(`WARNING: could not find deatg message of ${adventurer}`);
+			this.logInfo(`WARNING: could not find death message of ${adventurer}`);
 			return;
 		} else {
 			this.logInfo(`Death message id: ${raiseMessage.id}`);
