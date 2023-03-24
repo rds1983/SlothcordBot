@@ -7,12 +7,13 @@ const fs = require('fs');
 
 enum EventType {
 	Death,
-	Raise
+	Raised
 }
 
 class Event {
 	type: EventType;
 	adventurer: string;
+	doer: string;
 	timeStamp: number;
 }
 
@@ -45,10 +46,8 @@ export class Statistics {
 
 		// If the db file didnt exist, then create the tables
 		if (!dbExists) {
-			await result.exec('CREATE TABLE events(id INTEGER PRIMARY KEY, type INTEGER, adventurer TEXT, timeStamp INTEGER);');
-			await result.exec('CREATE TABLE doers(id INTEGER PRIMARY KEY, eventId INTEGER, name TEXT, FOREIGN KEY(eventId) REFERENCES events(id));');
+			await result.exec('CREATE TABLE events(id INTEGER PRIMARY KEY, type INTEGER, adventurer TEXT, doer TEXT, timeStamp INTEGER);');
 		}
-
 
 		return result;
 	}
@@ -57,15 +56,12 @@ export class Statistics {
 		let connection = await this.openDb();
 
 		let timeStamp = Utility.getUnixTimeStamp();
-		let cmd = `INSERT INTO events(type, adventurer, timeStamp) VALUES(${type}, '${adventurer}', ${timeStamp})`;
+		let cmd = `INSERT INTO events(type, adventurer, doer, timeStamp) VALUES(${type}, '${adventurer}', '${doer}', ${timeStamp})`;
 		let result = await connection.run(cmd);
-
-		let eventId = result.lastID;
-		cmd = `INSERT INTO doers(eventId, name) VALUES(${eventId}, '${doer}')`;
-		result = await connection.run(cmd);
 
 		await connection.close();
 
+		let eventId = result.lastID;
 		this.logInfo(`Added ${type} event #${eventId}: ${adventurer}, ${doer}, ${timeStamp}`);
 	}
 
@@ -73,7 +69,7 @@ export class Statistics {
 		this.logEventWithDoerAsync(EventType.Death, adventurer, killer).catch(err => this.logError(err));
 	}
 
-	static logRaise(adventurer: string, raised: string): void {
-		this.logEventWithDoerAsync(EventType.Raise, adventurer, raised).catch(err => this.logError(err));
+	static logRaise(adventurer: string, raiser: string): void {
+		this.logEventWithDoerAsync(EventType.Raised, adventurer, raiser).catch(err => this.logError(err));
 	}
 }
