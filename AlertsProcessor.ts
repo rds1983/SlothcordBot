@@ -1,4 +1,4 @@
-import { Client } from "discord.js";
+import { Client, EmbedBuilder } from "discord.js";
 import { JSDOM } from "jsdom";
 import { BaseProcessorImpl } from "./BaseProcessor";
 
@@ -61,6 +61,30 @@ export class AlertsProcessor extends BaseProcessorImpl<Event[]>
 
 	async reportDeath(newPost: Event): Promise<void> {
 		this.sendMessage(`${newPost.adventurer} was slain by ${newPost.doer}.`);
+	}
+
+	async reportRaise(adventurer: string, raiser: string): Promise<void> {
+		// Find the raise message
+		let raiseMessage = await this.findMessage(`${adventurer} was slain by`);
+
+		if (raiseMessage == null) {
+			this.logInfo(`WARNING: could not find deatg message of ${adventurer}`);
+			return;
+		} else {
+			this.logInfo(`Death message id: ${raiseMessage.id}`);
+		}
+
+		let embed = raiseMessage.embeds[0];
+
+		let desc = embed.description;
+
+		desc += `\nRaised by ${raiser}`;
+
+		// Edit the group message
+		const newEmbed = new EmbedBuilder().setDescription(desc);
+		await raiseMessage.edit({ embeds: [newEmbed] });
+
+		await this.makeChannelWhite();
 	}
 
 	async internalProcess(): Promise<void> {
@@ -133,6 +157,9 @@ export class AlertsProcessor extends BaseProcessorImpl<Event[]>
 
 				if (newPost.type == EventType.Death) {
 					await this.reportDeath(newPost);
+				} else if (newPost.type == EventType.Raise);
+				{
+					await this.reportRaise(newPost.adventurer, newPost.doer);
 				}
 			}
 		}

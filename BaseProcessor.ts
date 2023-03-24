@@ -126,4 +126,24 @@ export abstract class BaseProcessorImpl<StatusType> extends BaseProcessor {
 		const embed = new EmbedBuilder().setDescription(message);
 		return this.channel.send({ embeds: [embed] });
 	}
+
+	async findMessage(includes: string): Promise<Message<true>> {
+		let result: Message<true> = null;
+		let messages = await this.channel.messages.fetch({ limit: 10 });
+		let messagesArray = Array.from(messages.values());
+		for (let i = 0; i < messagesArray.length; ++i) {
+			let message = messagesArray[i];
+			if (message.embeds.length == 0) {
+				continue;
+			}
+			let embed = message.embeds[0];
+
+			if (embed.description.includes(includes)) {
+				result = message;
+				break;
+			}
+		}
+
+		return result;
+	}
 }

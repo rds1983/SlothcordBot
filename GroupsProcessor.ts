@@ -28,26 +28,13 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 		this.logInfo(`appendAndReportMessage for the group of ${leader}: ${append}`);
 
 		// Find the group message
-		let groupMessage = null;
-		let messages = await this.channel.messages.fetch({ limit: 10 });
-		let messagesArray = Array.from(messages.values());
-		for (let i = 0; i < messagesArray.length; ++i) {
-			let message = messagesArray[i];
-			if (message.embeds.length == 0) {
-				continue;
-			}
-			let embed = message.embeds[0];
-
-			if (embed.description.includes(`${leader} has started`)) {
-				groupMessage = message;
-				this.logInfo(`Group message id: ${groupMessage.id}`);
-				break;
-			}
-		}
+		let groupMessage = await this.findMessage(`${leader} has started`);
 
 		if (groupMessage == null) {
 			this.logInfo(`WARNING: could not find message for group of ${leader}`);
 			return;
+		} else {
+			this.logInfo(`Group message id: ${groupMessage.id}`);
 		}
 
 		let embed = groupMessage.embeds[0];
