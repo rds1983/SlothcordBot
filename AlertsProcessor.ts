@@ -1,6 +1,7 @@
 import { Client, EmbedBuilder } from "discord.js";
 import { JSDOM } from "jsdom";
 import { BaseProcessorImpl } from "./BaseProcessor";
+import { Global } from "./Global";
 import { Statistics } from "./Statistics";
 
 enum EventType {
@@ -212,6 +213,11 @@ export class AlertsProcessor extends BaseProcessorImpl<Event[]>
 				for (let i = 0; i < oldTopEventIndex; ++i) {
 					let newEvent = newEvents[i];
 
+					if (Global.config.excludeFromAlert.indexOf(newEvent.adventurer) > -1) {
+						this.logInfo(`${newEvent.adventurer} is excluded from the alerts.`);
+						continue;
+					}
+
 					if (newEvent.type == EventType.Death) {
 						await this.reportDeath(newEvent);
 						Statistics.logDeath(newEvent.adventurer, newEvent.doer);
@@ -221,6 +227,11 @@ export class AlertsProcessor extends BaseProcessorImpl<Event[]>
 				// Now report raises and shocks
 				for (let i = 0; i < oldTopEventIndex; ++i) {
 					let newEvent = newEvents[i];
+
+					if (Global.config.excludeFromAlert.indexOf(newEvent.adventurer) > -1) {
+						this.logInfo(`${newEvent.adventurer} is excluded from the alerts.`);
+						continue;
+					}
 
 					if (newEvent.type == EventType.Raise) {
 						await this.reportRaise(newEvent.adventurer, newEvent.doer);

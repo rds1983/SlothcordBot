@@ -4,9 +4,10 @@ import { BaseProcessor } from "./BaseProcessor";
 import { EmporiumProcessor } from "./EmporiumProcessor";
 import { EpicsProcessor } from "./EpicsProcessor";
 import { ForumProcessor } from "./ForumProcessor";
+import { Global } from "./Global";
 import { GroupsProcessor } from "./GroupsProcessor";
 
-const config = require('./config.json');
+Global.config = require('./config.json');
 
 let processors: BaseProcessor[] = [];
 
@@ -30,4 +31,4 @@ client.on("ready", () => {
 	}
 });
 
-client.login(config.token);
+client.login(Global.config.token);
