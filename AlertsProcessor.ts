@@ -179,12 +179,20 @@ export class AlertsProcessor extends BaseProcessorImpl<Event[]>
 			this.logInfo(`oldTopEventIndex: ${oldTopEventIndex}`);
 
 			// All events before oldTopPostIndex are new
+			// First report deaths
 			for (let i = 0; i < oldTopEventIndex; ++i) {
 				let newPost = newEvents[i];
 
 				if (newPost.type == EventType.Death) {
 					await this.reportDeath(newPost);
-				} else if (newPost.type == EventType.Raise) {
+				}
+			}
+
+			// Now report raises and shocks
+			for (let i = 0; i < oldTopEventIndex; ++i) {
+				let newPost = newEvents[i];
+
+				if (newPost.type == EventType.Raise) {
 					await this.reportRaise(newPost.adventurer, newPost.doer);
 				} else if (newPost.type == EventType.Shock) {
 					await this.reportShock(newPost.adventurer);
