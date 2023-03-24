@@ -30,7 +30,7 @@ export class AlertsProcessor extends BaseProcessorImpl<Event[]>
 	}
 
 	private static processEvent(type: EventType, regex: string, text: string, time: string, newEvents: Event[], doerFirst: boolean): boolean {
-		let re = new RegExp(regex);
+		let re = new RegExp(regex, "s");
 		let m = re.exec(text);
 		if (m) {
 			let adventurer: string;
@@ -78,7 +78,31 @@ export class AlertsProcessor extends BaseProcessorImpl<Event[]>
 
 		let desc = embed.description;
 
-		desc += `\nRaised by ${raiser}`;
+		desc += `\nRaised by ${raiser}.`;
+
+		// Edit the group message
+		const newEmbed = new EmbedBuilder().setDescription(desc);
+		await raiseMessage.edit({ embeds: [newEmbed] });
+
+		await this.makeChannelWhite();
+	}
+
+	async reportShock(adventurer: string): Promise<void> {
+		// Find the raise message
+		let raiseMessage = await this.findMessage(`${adventurer} was slain by`);
+
+		if (raiseMessage == null) {
+			this.logInfo(`WARNING: could not find deatg message of ${adventurer}`);
+			return;
+		} else {
+			this.logInfo(`Death message id: ${raiseMessage.id}`);
+		}
+
+		let embed = raiseMessage.embeds[0];
+
+		let desc = embed.description;
+
+		desc += `\nShocked.`;
 
 		// Edit the group message
 		const newEmbed = new EmbedBuilder().setDescription(desc);
@@ -130,7 +154,10 @@ export class AlertsProcessor extends BaseProcessorImpl<Event[]>
 					!AlertsProcessor.processEvent(EventType.Raise, "(\\w+) raised from the dead by (\\w+)\\.", eventText, time, newEvents, false)) {
 
 					// Finally check if it's shock
-					if (!AlertsProcessor.processEvent(EventType.Shock, "The gods liked (\\w+)'s soul(.*)- (\w+) was not convincing enough to cheat death\\.", eventText, time, newEvents, false)) {
+					if (!AlertsProcessor.processEvent(EventType.Shock, "(\\w+) shocked (\\w+)\\.", eventText, time, newEvents, true) &&
+						!AlertsProcessor.processEvent(EventType.Shock, "(\\w+) knelt, prayed, and still managed to shock (\\w+)\\.", eventText, time, newEvents, false) &&
+						!AlertsProcessor.processEvent(EventType.Shock, "(\\w+) was banished to ether by (\\w+)'s lack of raising ability\\.", eventText, time, newEvents, false) &&
+						!AlertsProcessor.processEvent(EventType.Shock, "The gods liked (\\w+)'s soul so much that they want to keep it\\s+\\-\\s+(\\w+) was not convincing enough to cheat death.", eventText, time, newEvents, false)) {
 						this.logInfo(`'${eventText}' neither death or raise or shock.`);
 					}
 				}
@@ -157,9 +184,10 @@ export class AlertsProcessor extends BaseProcessorImpl<Event[]>
 
 				if (newPost.type == EventType.Death) {
 					await this.reportDeath(newPost);
-				} else if (newPost.type == EventType.Raise)
-				{
+				} else if (newPost.type == EventType.Raise) {
 					await this.reportRaise(newPost.adventurer, newPost.doer);
+				} else if (newPost.type == EventType.Shock) {
+					await this.reportShock(newPost.adventurer);
 				}
 			}
 		}
