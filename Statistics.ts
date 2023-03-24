@@ -52,7 +52,7 @@ export class Statistics {
 		return result;
 	}
 
-	private static async logEventWithDoerAsync(type: EventType, adventurer: string, doer: string): Promise<void> {
+	private static async logEventAsync(type: EventType, adventurer: string, doer: string): Promise<void> {
 		let connection = await this.openDb();
 
 		let timeStamp = Utility.getUnixTimeStamp();
@@ -65,11 +65,11 @@ export class Statistics {
 		this.logInfo(`Added ${type} event #${eventId}: ${adventurer}, ${doer}, ${timeStamp}`);
 	}
 
-	static logDeath(adventurer: string, killer: string): void {
-		this.logEventWithDoerAsync(EventType.Death, adventurer, killer).catch(err => this.logError(err));
+	static async logDeath(adventurer: string, killer: string): Promise<void> {
+		return this.logEventAsync(EventType.Death, adventurer, killer);
 	}
 
-	static logRaise(adventurer: string, raiser: string): void {
-		this.logEventWithDoerAsync(EventType.Raised, adventurer, raiser).catch(err => this.logError(err));
+	static async logRaise(adventurer: string, raiser: string): Promise<void> {
+		return this.logEventAsync(EventType.Raised, adventurer, raiser).catch(err => this.logError(err));
 	}
 }
