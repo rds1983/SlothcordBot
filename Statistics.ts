@@ -56,8 +56,8 @@ export class Statistics {
 		let connection = await this.openDb();
 
 		let timeStamp = Utility.getUnixTimeStamp();
-		let cmd = `INSERT INTO events(type, adventurer, doer, timeStamp) VALUES(${type}, '${adventurer}', '${doer}', ${timeStamp})`;
-		let result = await connection.run(cmd);
+		let cmd = `INSERT INTO events(type, adventurer, doer, timeStamp) VALUES(?, ?, ?, ?)`;
+		let result = await connection.run(cmd, [type, adventurer, doer, timeStamp]);
 
 		await connection.close();
 
@@ -66,7 +66,7 @@ export class Statistics {
 	}
 
 	static async logDeath(adventurer: string, killer: string): Promise<void> {
-		return this.logEventAsync(EventType.Death, adventurer, killer);
+		return this.logEventAsync(EventType.Death, adventurer, killer).catch(err => this.logError(err));
 	}
 
 	static async logRaise(adventurer: string, raiser: string): Promise<void> {

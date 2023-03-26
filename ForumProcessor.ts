@@ -76,34 +76,39 @@ export class ForumProcessor extends BaseProcessorImpl<Post[]>
 			}
 		}
 
-		if (this.status != null) {
-			let oldTopPost = this.status[0];
-			let oldTopPostIndex: number = null;
-			for (let i = 0; i < newPosts.length; ++i) {
-				let newPost = newPosts[i];
-
-				if (newPost.threadName == oldTopPost.threadName) {
-					oldTopPostIndex = i;
-					break;
-				}
-			}
-
-			this.logInfo(`oldTopPostIndex: ${oldTopPostIndex}`);
-
-			if (oldTopPostIndex != null) {
-				// All posts before oldTopPostIndex are new
-				for (let i = 0; i < oldTopPostIndex; ++i) {
+		try {
+			if (this.status != null) {
+				let oldTopPost = this.status[0];
+				let oldTopPostIndex: number = null;
+				for (let i = 0; i < newPosts.length; ++i) {
 					let newPost = newPosts[i];
-					await this.reportNewPost(newPost);
+
+					if (newPost.threadName == oldTopPost.threadName) {
+						oldTopPostIndex = i;
+						break;
+					}
 				}
 
-				// If poster has changed then the post is new too
-				if (newPosts[oldTopPostIndex].poster != oldTopPost.poster) {
-					await this.reportNewPost(newPosts[oldTopPostIndex]);
+				this.logInfo(`oldTopPostIndex: ${oldTopPostIndex}`);
+
+				if (oldTopPostIndex != null) {
+					// All posts before oldTopPostIndex are new
+					for (let i = 0; i < oldTopPostIndex; ++i) {
+						let newPost = newPosts[i];
+						await this.reportNewPost(newPost);
+					}
+
+					// If poster has changed then the post is new too
+					if (newPosts[oldTopPostIndex].poster != oldTopPost.poster) {
+						await this.reportNewPost(newPosts[oldTopPostIndex]);
+					}
+				} else {
+					this.logInfo(`WARNING: could not find oldTopPostIndex`);
 				}
-			} else {
-				this.logInfo(`WARNING: could not find oldTopPostIndex`);
 			}
+		}
+		catch (err) {
+			this.logInfo(err);
 		}
 
 		this.status = newPosts;

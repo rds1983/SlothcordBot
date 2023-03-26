@@ -77,6 +77,10 @@ export class AlertsProcessor extends BaseProcessorImpl<Event[]>
 	}
 
 	private static processEventWithParser(type: EventType, parser: EventParseInfo, text: string, time: string, newEvents: Event[]): boolean {
+		if (text.includes("Fraz-Urb'Luu")) {
+			let k = 5;
+		}
+
 		let m = parser.regex.exec(text);
 		if (m) {
 			let adventurer: string;
@@ -193,57 +197,63 @@ export class AlertsProcessor extends BaseProcessorImpl<Event[]>
 			}
 		}
 
-		if (this.status != null) {
-			let oldTopEvent = this.status[0];
-			let oldTopEventIndex: number = null;
-			for (let i = 0; i < newEvents.length; ++i) {
-				let newEvent = newEvents[i];
-
-				if (newEvent.type == oldTopEvent.type && newEvent.adventurer == oldTopEvent.adventurer && newEvent.doer == oldTopEvent.doer && newEvent.time == oldTopEvent.time) {
-					oldTopEventIndex = i;
-					break;
-				}
-			}
-
-			this.logInfo(`oldTopEventIndex: ${oldTopEventIndex}`);
-
-			if (oldTopEventIndex != null) {
-				// All events before oldTopEventIndex are new
-				// First report deaths
-				for (let i = 0; i < oldTopEventIndex; ++i) {
+		try {
+			if (this.status != null) {
+				let oldTopEvent = this.status[0];
+				let oldTopEventIndex: number = null;
+				for (let i = 0; i < newEvents.length; ++i) {
 					let newEvent = newEvents[i];
 
-					if (Global.config.excludeFromAlert.indexOf(newEvent.adventurer) > -1) {
-						this.logInfo(`${newEvent.adventurer} is excluded from the alerts.`);
-						continue;
-					}
-
-					if (newEvent.type == EventType.Death) {
-						await this.reportDeath(newEvent);
-						await Statistics.logDeath(newEvent.adventurer, newEvent.doer);
+					if (newEvent.type == oldTopEvent.type && newEvent.adventurer == oldTopEvent.adventurer && newEvent.doer == oldTopEvent.doer && newEvent.time == oldTopEvent.time) {
+						oldTopEventIndex = i;
+						break;
 					}
 				}
 
-				// Now report raises and shocks
-				for (let i = 0; i < oldTopEventIndex; ++i) {
-					let newEvent = newEvents[i];
+				this.logInfo(`oldTopEventIndex: ${oldTopEventIndex}`);
 
-					if (Global.config.excludeFromAlert.indexOf(newEvent.adventurer) > -1) {
-						this.logInfo(`${newEvent.adventurer} is excluded from the alerts.`);
-						continue;
+				if (oldTopEventIndex != null) {
+					// All events before oldTopEventIndex are new
+					// First report deaths
+					for (let i = 0; i < oldTopEventIndex; ++i) {
+						let newEvent = newEvents[i];
+
+						if (Global.config.excludeFromAlert.indexOf(newEvent.adventurer) > -1) {
+							this.logInfo(`${newEvent.adventurer} is excluded from the alerts.`);
+							continue;
+						}
+
+						if (newEvent.type == EventType.Death) {
+							await this.reportDeath(newEvent);
+							await Statistics.logDeath(newEvent.adventurer, newEvent.doer);
+						}
 					}
 
-					if (newEvent.type == EventType.Raise) {
-						await this.reportRaise(newEvent.adventurer, newEvent.doer);
-						await Statistics.logRaise(newEvent.adventurer, newEvent.doer);
-					} else if (newEvent.type == EventType.Shock) {
-						await this.reportShock(newEvent.adventurer);
+					// Now report raises and shocks
+					for (let i = 0; i < oldTopEventIndex; ++i) {
+						let newEvent = newEvents[i];
+
+						if (Global.config.excludeFromAlert.indexOf(newEvent.adventurer) > -1) {
+							this.logInfo(`${newEvent.adventurer} is excluded from the alerts.`);
+							continue;
+						}
+
+						if (newEvent.type == EventType.Raise) {
+							await this.reportRaise(newEvent.adventurer, newEvent.doer);
+							await Statistics.logRaise(newEvent.adventurer, newEvent.doer);
+						} else if (newEvent.type == EventType.Shock) {
+							await this.reportShock(newEvent.adventurer);
+						}
 					}
+				} else {
+					this.logInfo(`WARNING: could not find oldTopEventIndex`);
 				}
-			} else {
-				this.logInfo(`WARNING: could not find oldTopEventIndex`);
 			}
 		}
+		catch (err) {
+			this.logError(err);
+		}
+
 
 		this.status = newEvents;
 		this.saveStatus();

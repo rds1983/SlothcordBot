@@ -117,105 +117,110 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 			newGroups[group.leader] = group;
 		}
 
-		if (this.status != null) {
-			// Update initial leaders
-			for (let leader in newGroups) {
-				let newGroup = newGroups[leader];
-				if (leader in this.status) {
-					let oldGroup = this.status[leader];
-					newGroup.initialLeader = oldGroup.initialLeader;
+		try {
+			if (this.status != null) {
+				// Update initial leaders
+				for (let leader in newGroups) {
+					let newGroup = newGroups[leader];
+					if (leader in this.status) {
+						let oldGroup = this.status[leader];
+						newGroup.initialLeader = oldGroup.initialLeader;
 
-					if ("started" in oldGroup) {
-						newGroup.started = oldGroup.started;
+						if ("started" in oldGroup) {
+							newGroup.started = oldGroup.started;
+						}
 					}
 				}
-			}
 
-			// Check for groups that were over or had changed the leader
-			let leaderChanges: { [leader: string]: string } = {};
-			for (let oldLeader in this.status) {
-				let oldGroup = this.status[oldLeader];
-				if (!(oldLeader in newGroups)) {
+				// Check for groups that were over or had changed the leader
+				let leaderChanges: { [leader: string]: string } = {};
+				for (let oldLeader in this.status) {
+					let oldGroup = this.status[oldLeader];
+					if (!(oldLeader in newGroups)) {
 
-					// Check for the leader change
-					let changedLeader = false;
-					for (let newLeader in newGroups) {
-						let newGroup = newGroups[newLeader];
+						// Check for the leader change
+						let changedLeader = false;
+						for (let newLeader in newGroups) {
+							let newGroup = newGroups[newLeader];
 
-						let matches = 0;
+							let matches = 0;
 
-						// Calculate how many adventurers from the old group presents in the new group
-						for (let i = 0; i < oldGroup.adventurers.length; ++i) {
-							for (let j = 0; j < newGroup.adventurers.length; ++j) {
-								if (oldGroup.adventurers[i] == newGroup.adventurers[j]) {
-									++matches;
+							// Calculate how many adventurers from the old group presents in the new group
+							for (let i = 0; i < oldGroup.adventurers.length; ++i) {
+								for (let j = 0; j < newGroup.adventurers.length; ++j) {
+									if (oldGroup.adventurers[i] == newGroup.adventurers[j]) {
+										++matches;
+									}
 								}
+							}
+
+							this.logInfo(`Amount of matches for ${oldLeader}/${newLeader}: ${matches}`);
+
+							// If rate of matches >= 0.6 for both groups, then it's the leader change
+							var oldRate = matches / oldGroup.adventurers.length;
+							var newRate = matches / newGroup.adventurers.length;
+							this.logInfo(`Old rate/new rate: ${oldRate}/${newRate}`);
+
+							if (oldRate >= 0.6 && newRate >= 0.6) {
+								changedLeader = true;
+								newGroup.initialLeader = oldGroup.initialLeader;
+								newGroup.started = oldGroup.started;
+								leaderChanges[oldLeader] = newLeader;
+								await this.appendMessage(oldGroup.initialLeader, `The new leader is ${newLeader}.`, oldGroup.started);
+								break;
 							}
 						}
 
-						this.logInfo(`Amount of matches for ${oldLeader}/${newLeader}: ${matches}`);
-
-						// If rate of matches >= 0.6 for both groups, then it's the leader change
-						var oldRate = matches / oldGroup.adventurers.length;
-						var newRate = matches / newGroup.adventurers.length;
-						this.logInfo(`Old rate/new rate: ${oldRate}/${newRate}`);
-
-						if (oldRate >= 0.6 && newRate >= 0.6) {
-							changedLeader = true;
-							newGroup.initialLeader = oldGroup.initialLeader;
-							newGroup.started = oldGroup.started;
-							leaderChanges[oldLeader] = newLeader;
-							await this.appendMessage(oldGroup.initialLeader, `The new leader is ${newLeader}.`, oldGroup.started);
-							break;
+						if (!changedLeader) {
+							await this.appendMessage(oldGroup.initialLeader, `The group is over.`, oldGroup.started);
 						}
 					}
+				}
 
-					if (!changedLeader) {
-						await this.appendMessage(oldGroup.initialLeader, `The group is over.`, oldGroup.started);
+				// Update old groups with the leader changes
+				for (let oldLeader in leaderChanges) {
+					let newLeader = leaderChanges[oldLeader];
+					let oldGroup = this.status[oldLeader];
+					delete this.status[oldLeader];
+					this.status[newLeader] = oldGroup;
+				}
+
+				// Check for new and renamed groups
+				for (let newLeader in newGroups) {
+					let newGroup = newGroups[newLeader];
+					if (!(newLeader in this.status)) {
+						newGroup.started = new Date().getTime();
+						await this.sendMessage(`${newLeader} has started group '${newGroup.name}'. Group consists of ${newGroup.adventurers.length} adventurers.`)
+					} else {
+						let oldGroup = this.status[newLeader];
+
+						// Ignore group name changes caused by the leader change
+						if (oldGroup.name != newGroup.name && !Object.values(leaderChanges).includes(newLeader)) {
+							await this.appendMessage(oldGroup.initialLeader, `${newLeader} has changed group name to '${newGroup.name}'`, oldGroup.started);
+						}
+
+						let oldSizeDivided = Math.floor(oldGroup.adventurers.length / 4);
+						let newSizeDivided = Math.floor(newGroup.adventurers.length / 4);
+
+						if (newSizeDivided > oldSizeDivided) {
+							await this.appendMessage(oldGroup.initialLeader, `The group has became bigger. Now it has as many as ${newGroup.adventurers.length} adventurers.`, oldGroup.started);
+						}
+
+						if (newSizeDivided < oldSizeDivided) {
+							await this.appendMessage(oldGroup.initialLeader, `The group has became smaller. Now it has only ${newGroup.adventurers.length} adventurers.`, oldGroup.started);
+						}
 					}
 				}
 			}
 
-			// Update old groups with the leader changes
-			for (let oldLeader in leaderChanges) {
-				let newLeader = leaderChanges[oldLeader];
-				let oldGroup = this.status[oldLeader];
-				delete this.status[oldLeader];
-				this.status[newLeader] = oldGroup;
-			}
-
-			// Check for new and renamed groups
+			// Log groups
 			for (let newLeader in newGroups) {
 				let newGroup = newGroups[newLeader];
-				if (!(newLeader in this.status)) {
-					newGroup.started = new Date().getTime();
-					await this.sendMessage(`${newLeader} has started group '${newGroup.name}'. Group consists of ${newGroup.adventurers.length} adventurers.`)
-				} else {
-					let oldGroup = this.status[newLeader];
-
-					// Ignore group name changes caused by the leader change
-					if (oldGroup.name != newGroup.name && !Object.values(leaderChanges).includes(newLeader)) {
-						await this.appendMessage(oldGroup.initialLeader, `${newLeader} has changed group name to '${newGroup.name}'`, oldGroup.started);
-					}
-
-					let oldSizeDivided = Math.floor(oldGroup.adventurers.length / 4);
-					let newSizeDivided = Math.floor(newGroup.adventurers.length / 4);
-
-					if (newSizeDivided > oldSizeDivided) {
-						await this.appendMessage(oldGroup.initialLeader, `The group has became bigger. Now it has as many as ${newGroup.adventurers.length} adventurers.`, oldGroup.started);
-					}
-
-					if (newSizeDivided < oldSizeDivided) {
-						await this.appendMessage(oldGroup.initialLeader, `The group has became smaller. Now it has only ${newGroup.adventurers.length} adventurers.`, oldGroup.started);
-					}
-				}
+				this.logInfo(Utility.toString(newGroup));
 			}
 		}
-
-		// Log groups
-		for (let newLeader in newGroups) {
-			let newGroup = newGroups[newLeader];
-			this.logInfo(Utility.toString(newGroup));
+		catch (err) {
+			this.logInfo(err);
 		}
 
 		this.status = newGroups;

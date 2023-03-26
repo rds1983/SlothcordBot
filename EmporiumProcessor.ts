@@ -127,90 +127,95 @@ export class EmporiumProcessor extends BaseProcessorImpl<{ [seller: string]: Auc
 
 		this.logInfo(`Items count: ${count}`);
 
-		if (this.status != null) {
-			for (let seller in newAuctions) {
-				this.logInfo(`Going through items of ${seller}`);
-				if (!(seller in this.status)) {
-					// New seller
-					this.logInfo(`New seller`);
-					// Report every item
-					let sellerData = newAuctions[seller];
-					for (let i = 0; i < sellerData.length; ++i) {
-						let item = sellerData[i];
-						await this.reportNewItem(seller, item.name, item.price, item.buyout, item.ends);
-					}
-				} else {
-					// Remove existing items
-					let newData = newAuctions[seller].slice();
-					let oldData = this.status[seller];
+		try {
+			if (this.status != null) {
+				for (let seller in newAuctions) {
+					this.logInfo(`Going through items of ${seller}`);
+					if (!(seller in this.status)) {
+						// New seller
+						this.logInfo(`New seller`);
+						// Report every item
+						let sellerData = newAuctions[seller];
+						for (let i = 0; i < sellerData.length; ++i) {
+							let item = sellerData[i];
+							await this.reportNewItem(seller, item.name, item.price, item.buyout, item.ends);
+						}
+					} else {
+						// Remove existing items
+						let newData = newAuctions[seller].slice();
+						let oldData = this.status[seller];
 
-					let newDataSameIndices: { [index: number]: boolean } = {};
-					let oldDataSameIndices: { [index: number]: boolean } = {};
+						let newDataSameIndices: { [index: number]: boolean } = {};
+						let oldDataSameIndices: { [index: number]: boolean } = {};
 
-					for (let i = 0; i < newData.length; ++i) {
-						let newItem = newData[i];
-						for (let j = 0; j < oldData.length; ++j) {
-							if (j in oldDataSameIndices) {
+						for (let i = 0; i < newData.length; ++i) {
+							let newItem = newData[i];
+							for (let j = 0; j < oldData.length; ++j) {
+								if (j in oldDataSameIndices) {
+									continue;
+								}
+
+								let oldItem = oldData[j];
+								if (newItem.name == oldItem.name) {
+									// Mark item as same in both lists
+									newDataSameIndices[i] = true;
+									oldDataSameIndices[j] = true;
+
+									if ("lastWarning" in oldItem) {
+										newItem.lastWarning = oldItem.lastWarning;
+									}
+									break;
+								}
+							}
+						}
+
+						// Report remaining new items as put on sale
+						for (let i = 0; i < newData.length; ++i) {
+							// Last warning
+							let item = newData[i];
+
+							let minutesLeft = this.convertEndsToMinutes(item.ends);
+							if (minutesLeft > 0 && minutesLeft <= 120 && !item.lastWarning) {
+								let link = EmporiumProcessor.buildItemLink(item.name);
+								await this.sendMessage(`The auction for ${seller}'s item '${link}' will end in less than two hours.`);
+								item.lastWarning = true;
+							}
+
+							if (i in newDataSameIndices) {
 								continue;
 							}
 
-							let oldItem = oldData[j];
-							if (newItem.name == oldItem.name) {
-								// Mark item as same in both lists
-								newDataSameIndices[i] = true;
-								oldDataSameIndices[j] = true;
+							await this.reportNewItem(seller, item.name, item.price, item.buyout, item.ends);
+						}
 
-								if ("lastWarning" in oldItem) {
-									newItem.lastWarning = oldItem.lastWarning;
-								}
-								break;
+						// Report remaining old items as sold
+						for (let i = 0; i < oldData.length; ++i) {
+							if (i in oldDataSameIndices) {
+								continue;
 							}
+
+							let item = oldData[i];
+							await this.reportSoldItem(seller, item.name, item.bidder, item.price);
 						}
-					}
-
-					// Report remaining new items as put on sale
-					for (let i = 0; i < newData.length; ++i) {
-						// Last warning
-						let item = newData[i];
-
-						let minutesLeft = this.convertEndsToMinutes(item.ends);
-						if (minutesLeft > 0 && minutesLeft <= 120 && !item.lastWarning) {
-							let link = EmporiumProcessor.buildItemLink(item.name);
-							await this.sendMessage(`The auction for ${seller}'s item '${link}' will end in less than two hours.`);
-							item.lastWarning = true;
-						}
-
-						if (i in newDataSameIndices) {
-							continue;
-						}
-
-						await this.reportNewItem(seller, item.name, item.price, item.buyout, item.ends);
-					}
-
-					// Report remaining old items as sold
-					for (let i = 0; i < oldData.length; ++i) {
-						if (i in oldDataSameIndices) {
-							continue;
-						}
-
-						let item = oldData[i];
-						await this.reportSoldItem(seller, item.name, item.bidder, item.price);
 					}
 				}
-			}
 
-			// Report items of disappeared sellers as sold
-			for (let seller in this.status) {
-				if (!(seller in newAuctions)) {
-					let items = this.status[seller];
-					for (let i = 0; i < items.length; ++i) {
-						let item = items[i];
-						await this.reportSoldItem(seller, item.name, item.bidder, item.price);
+				// Report items of disappeared sellers as sold
+				for (let seller in this.status) {
+					if (!(seller in newAuctions)) {
+						let items = this.status[seller];
+						for (let i = 0; i < items.length; ++i) {
+							let item = items[i];
+							await this.reportSoldItem(seller, item.name, item.bidder, item.price);
+						}
 					}
 				}
+			} else {
+				this.logInfo("Existing auctions data is empty.");
 			}
-		} else {
-			this.logInfo("Existing auctions data is empty.");
+		}
+		catch (err) {
+			this.logError(err);
 		}
 
 		this.status = newAuctions;

@@ -64,71 +64,75 @@ export class EpicsProcessor extends BaseProcessorImpl<Epic[]>
 			newEpics.push(epic);
 		}
 
-		let changed = false;
+		try {
+			let changed = false;
+			if (this.status != null) {
+				// Report new epics
+				for (let i = 0; i < newEpics.length; ++i) {
+					let newEpic = newEpics[i];
+					let found = false;
+					for (let j = 0; j < this.status.length; ++j) {
+						let oldEpic = this.status[j];
 
-		if (this.status != null) {
-			// Report new epics
-			for (let i = 0; i < newEpics.length; ++i) {
-				let newEpic = newEpics[i];
-				let found = false;
-				for (let j = 0; j < this.status.length; ++j) {
-					let oldEpic = this.status[j];
+						if (newEpic.name == oldEpic.name) {
+							found = true;
+							break;
+						}
+					}
 
-					if (newEpic.name == oldEpic.name) {
-						found = true;
-						break;
+					if (!found) {
+						changed = true;
 					}
 				}
 
-				if (!found) {
-					changed = true;
-				}
-			}
+				// Report killed epics
+				for (let i = 0; i < this.status.length; ++i) {
+					let oldEpic = this.status[i];
+					let found = false;
+					for (let j = 0; j < newEpics.length; ++j) {
+						let newEpic = newEpics[j];
 
-			// Report killed epics
-			for (let i = 0; i < this.status.length; ++i) {
-				let oldEpic = this.status[i];
-				let found = false;
-				for (let j = 0; j < newEpics.length; ++j) {
-					let newEpic = newEpics[j];
+						if (newEpic.name == oldEpic.name) {
+							found = true;
+							break;
+						}
+					}
 
-					if (newEpic.name == oldEpic.name) {
-						found = true;
-						break;
+					if (!found) {
+						changed = true;
 					}
 				}
+			} else {
+				changed = true;
+			}
 
-				if (!found) {
-					changed = true;
+			if (changed) {
+				let result = "";
+				for (let i = 0; i < newEpics.length; ++i) {
+					let epic = newEpics[i];
+					result += `${i + 1}. ${epic.name} in ${epic.area} at ${epic.continent}\n`;
+				}
+
+				// Fetch old messages
+				let messages = await this.channel.messages.fetch();
+				let messagesArray = Array.from(messages.values());
+
+				// Post new messages with the epics' status
+				await this.sendMessage(result);
+
+				// Delete old messages
+				try {
+					for (let i = 0; i < messagesArray.length; ++i) {
+						await messagesArray[i].delete();
+					}
+				}
+				catch (err: any) {
+					this.logError(err);
 				}
 			}
-		} else {
-			changed = true;
 		}
-
-		if (changed) {
-			let result = "";
-			for (let i = 0; i < newEpics.length; ++i) {
-				let epic = newEpics[i];
-				result += `${i + 1}. ${epic.name} in ${epic.area} at ${epic.continent}\n`;
-			}
-
-			// Fetch old messages
-			let messages = await this.channel.messages.fetch();
-			let messagesArray = Array.from(messages.values());
-
-			// Post new messages with the epics' status
-			await this.sendMessage(result);
-
-			// Delete old messages
-			try {
-				for (let i = 0; i < messagesArray.length; ++i) {
-					await messagesArray[i].delete();
-				}
-			}
-			catch (err: any) {
-				this.logError(err);
-			}
+		catch (err) {
+			this.logError(err);
 		}
 
 		this.status = newEpics;
