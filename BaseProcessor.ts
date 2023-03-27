@@ -5,13 +5,24 @@ import { Utility } from "./Utility";
 const fs = require('fs');
 
 export abstract class BaseProcessor {
-	abstract process(): void;
+	private isProcessing: boolean = false;
+
+	abstract process(onFinished: () => void): void;
 	abstract runIntervalInMs(): number;
 
-	start(): void {
-		this.process();
+	private processWithFlag(): void {
+		if (this.isProcessing) {
+			return;
+		}
 
-		setInterval(() => this.process(), this.runIntervalInMs());
+		this.isProcessing = true;
+		this.process(() => this.isProcessing = false);
+
+	}
+
+	start(): void {
+		this.processWithFlag();
+		setInterval(() => this.processWithFlag(), this.runIntervalInMs());
 	}
 }
 

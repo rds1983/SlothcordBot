@@ -222,7 +222,7 @@ export class EmporiumProcessor extends BaseProcessorImpl<{ [seller: string]: Auc
 		this.saveStatus();
 	}
 
-	process(): void {
-		this.internalProcess().catch(err => this.logError(err));
+	process(onFinished: () => void): void {
+		this.internalProcess().catch(err => this.logError(err)).finally(onFinished);
 	}
 }

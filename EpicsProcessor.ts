@@ -139,7 +139,7 @@ export class EpicsProcessor extends BaseProcessorImpl<Epic[]>
 		this.saveStatus();
 	}
 
-	process(): void {
-		this.internalProcess().catch(err => this.logError(err));
+	process(onFinished: () => void): void {
+		this.internalProcess().catch(err => this.logError(err)).finally(onFinished);
 	}
 }

@@ -237,7 +237,7 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 		this.saveStatus();
 	}
 
-	process(): void {
-		this.internalProcess().catch(err => this.logError(err));
+	process(onFinished: () => void): void {
+		this.internalProcess().catch(err => this.logError(err)).finally(onFinished);
 	}
 }
