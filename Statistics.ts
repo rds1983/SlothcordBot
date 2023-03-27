@@ -3,18 +3,9 @@ import sqlite3 from 'sqlite3';
 import { Database, open } from 'sqlite';
 import { Utility } from "./Utility";
 
-const fs = require('fs');
-
 enum EventType {
 	Death,
 	Raised
-}
-
-class Event {
-	type: EventType;
-	adventurer: string;
-	doer: string;
-	timeStamp: number;
 }
 
 export class Statistics {
