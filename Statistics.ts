@@ -47,7 +47,7 @@ export class Statistics {
 		let connection = await this.openDb();
 
 		let timeStamp = Utility.getUnixTimeStamp();
-		let cmd = `INSERT INTO alerts(type, adventurer, doer, gameTime, timeStamp) VALUES(?, ?, ?, ?)`;
+		let cmd = `INSERT INTO alerts(type, adventurer, doer, gameTime, timeStamp) VALUES(?, ?, ?, ?, ?)`;
 		let result = await connection.run(cmd, [type, adventurer, doer, gameTime, timeStamp]);
 
 		await connection.close();
