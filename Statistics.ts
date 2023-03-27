@@ -57,11 +57,11 @@ export class Statistics {
 	}
 
 	static async logDeath(adventurer: string, killer: string, gameTime: string): Promise<void> {
-		return this.logAlertAsync(EventType.Death, adventurer, gameTime, killer).catch(err => this.logError(err));
+		return this.logAlertAsync(EventType.Death, adventurer, killer, gameTime).catch(err => this.logError(err));
 	}
 
 	static async logRaise(adventurer: string, raiser: string, gameTime: string): Promise<void> {
-		return this.logAlertAsync(EventType.Raised, adventurer, gameTime, raiser).catch(err => this.logError(err));
+		return this.logAlertAsync(EventType.Raised, adventurer, raiser, gameTime).catch(err => this.logError(err));
 	}
 
 	private static async logGroupEndedInternal(connection: Database, leader: string): Promise<void> {
