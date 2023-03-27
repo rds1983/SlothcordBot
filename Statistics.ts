@@ -37,19 +37,10 @@ export class Statistics {
 	}
 
 	private static async openDb(): Promise<Database> {
-		let dbExists = fs.existsSync(this.DbFileName);
-
-		let result = await open({
+		return await open({
 			filename: this.DbFileName,
 			driver: sqlite3.Database
 		});
-
-		// If the db file didnt exist, then create the tables
-		if (!dbExists) {
-			await result.exec('CREATE TABLE events(id INTEGER PRIMARY KEY, type INTEGER, adventurer TEXT, doer TEXT, timeStamp INTEGER);');
-		}
-
-		return result;
 	}
 
 	private static async logEventAsync(type: EventType, adventurer: string, doer: string): Promise<void> {
@@ -71,5 +62,53 @@ export class Statistics {
 
 	static async logRaise(adventurer: string, raiser: string): Promise<void> {
 		return this.logEventAsync(EventType.Raised, adventurer, raiser).catch(err => this.logError(err));
+	}
+
+	private static async logGroupEndedInternal(connection: Database, leader: string): Promise<void> {
+		// Find last group of this leader
+		let cmd = `SELECT id, size FROM groups WHERE leader = ? AND finished = 0`;
+		let result = await connection.get(cmd, [leader]);
+		if (result === undefined) {
+			return;
+		}
+
+		let timeStamp = Utility.getUnixTimeStamp();
+		cmd = `UPDATE groups SET finished = ? WHERE id = ?`;
+		await connection.run(cmd, [timeStamp, result.id]);
+
+		this.logInfo(`${leader}'s group finished at ${timeStamp}`);
+	}
+
+
+	public static async logGroupEnded(leader: string): Promise<void> {
+		try {
+			let connection = await this.openDb();
+			await this.logGroupEndedInternal(connection, leader);
+			await connection.close();
+		}
+		catch (err) {
+			this.logError(err);
+		}
+	}
+
+	public static async logGroupStarted(leader: string, size: number): Promise<void> {
+		try {
+			// End existing group
+			let connection = await this.openDb();
+			await this.logGroupEndedInternal(connection, leader);
+
+			// Start new one
+			let timeStamp = Utility.getUnixTimeStamp();
+			let cmd = `INSERT INTO groups(leader, size, started, finished) VALUES(?, ?, ?, ?)`;
+			await connection.run(cmd, [leader, size, timeStamp, 0]);
+
+			this.logInfo(`${leader} started group with size ${size} at ${timeStamp}`);
+
+
+			await connection.close();
+		}
+		catch (err) {
+			this.logError(err);
+		}
 	}
 }

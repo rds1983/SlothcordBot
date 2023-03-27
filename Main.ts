@@ -6,8 +6,26 @@ import { EpicsProcessor } from "./EpicsProcessor";
 import { ForumProcessor } from "./ForumProcessor";
 import { Global } from "./Global";
 import { GroupsProcessor } from "./GroupsProcessor";
+import { Statistics } from "./Statistics";
 
 Global.config = require('./config.json');
+
+class T {
+	static async f(): Promise<void> {
+		await Statistics.logGroupStarted("Yang", 5);
+		await Statistics.logGroupStarted("Yang", 8);
+		await Statistics.logGroupEnded("Yang");
+	}
+
+	static f2()
+	{
+		this.f().catch(err => {
+			var k = 5;
+		});
+	}
+}
+
+T.f2();
 
 let processors: BaseProcessor[] = [];
 
