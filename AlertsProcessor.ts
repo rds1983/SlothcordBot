@@ -225,7 +225,7 @@ export class AlertsProcessor extends BaseProcessorImpl<Event[]>
 
 						if (newEvent.type == EventType.Death) {
 							await this.reportDeath(newEvent);
-							await Statistics.logDeath(newEvent.adventurer, newEvent.doer);
+							await Statistics.logDeath(newEvent.adventurer, newEvent.doer, newEvent.time);
 						}
 					}
 
@@ -240,7 +240,7 @@ export class AlertsProcessor extends BaseProcessorImpl<Event[]>
 
 						if (newEvent.type == EventType.Raise) {
 							await this.reportRaise(newEvent.adventurer, newEvent.doer);
-							await Statistics.logRaise(newEvent.adventurer, newEvent.doer);
+							await Statistics.logRaise(newEvent.adventurer, newEvent.doer, newEvent.time);
 						} else if (newEvent.type == EventType.Shock) {
 							await this.reportShock(newEvent.adventurer);
 						}

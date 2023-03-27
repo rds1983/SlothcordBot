@@ -43,25 +43,25 @@ export class Statistics {
 		});
 	}
 
-	private static async logEventAsync(type: EventType, adventurer: string, doer: string): Promise<void> {
+	private static async logAlertAsync(type: EventType, adventurer: string, doer: string, gameTime: string): Promise<void> {
 		let connection = await this.openDb();
 
 		let timeStamp = Utility.getUnixTimeStamp();
-		let cmd = `INSERT INTO events(type, adventurer, doer, timeStamp) VALUES(?, ?, ?, ?)`;
-		let result = await connection.run(cmd, [type, adventurer, doer, timeStamp]);
+		let cmd = `INSERT INTO alerts(type, adventurer, doer, gameTime, timeStamp) VALUES(?, ?, ?, ?)`;
+		let result = await connection.run(cmd, [type, adventurer, doer, gameTime, timeStamp]);
 
 		await connection.close();
 
 		let eventId = result.lastID;
-		this.logInfo(`Added ${type} event #${eventId}: ${adventurer}, ${doer}, ${timeStamp}`);
+		this.logInfo(`Added ${type} alert #${eventId}: ${adventurer}, ${doer}, ${gameTime}, ${timeStamp}`);
 	}
 
-	static async logDeath(adventurer: string, killer: string): Promise<void> {
-		return this.logEventAsync(EventType.Death, adventurer, killer).catch(err => this.logError(err));
+	static async logDeath(adventurer: string, killer: string, gameTime: string): Promise<void> {
+		return this.logAlertAsync(EventType.Death, adventurer, gameTime, killer).catch(err => this.logError(err));
 	}
 
-	static async logRaise(adventurer: string, raiser: string): Promise<void> {
-		return this.logEventAsync(EventType.Raised, adventurer, raiser).catch(err => this.logError(err));
+	static async logRaise(adventurer: string, raiser: string, gameTime: string): Promise<void> {
+		return this.logAlertAsync(EventType.Raised, adventurer, gameTime, raiser).catch(err => this.logError(err));
 	}
 
 	private static async logGroupEndedInternal(connection: Database, leader: string): Promise<void> {
