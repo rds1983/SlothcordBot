@@ -55,7 +55,7 @@ export class Statistics {
 		return this.logAlertAsync(EventType.Raised, adventurer, raiser, gameTime).catch(err => this.logError(err));
 	}
 
-	private static async logGroupEndedInternal(connection: Database, leader: string): Promise<void> {
+	private static async logGroupEndedInternal(connection: Database, leader: string, timeStamp: number): Promise<void> {
 		// Find last group of this leader
 		let cmd = `SELECT id, size FROM groups WHERE leader = ? AND finished = 0`;
 		let result = await connection.get(cmd, [leader]);
@@ -63,7 +63,6 @@ export class Statistics {
 			return;
 		}
 
-		let timeStamp = Utility.getUnixTimeStamp();
 		cmd = `UPDATE groups SET finished = ? WHERE id = ?`;
 		await connection.run(cmd, [timeStamp, result.id]);
 
@@ -74,7 +73,8 @@ export class Statistics {
 	public static async logGroupEnded(leader: string): Promise<void> {
 		try {
 			let connection = await this.openDb();
-			await this.logGroupEndedInternal(connection, leader);
+			let timeStamp = Utility.getUnixTimeStamp();
+			await this.logGroupEndedInternal(connection, leader, timeStamp);
 			await connection.close();
 		}
 		catch (err) {
@@ -84,12 +84,13 @@ export class Statistics {
 
 	public static async logGroupStarted(leader: string, size: number): Promise<void> {
 		try {
+			let timeStamp = Utility.getUnixTimeStamp();
+
 			// End existing group
 			let connection = await this.openDb();
-			await this.logGroupEndedInternal(connection, leader);
+			await this.logGroupEndedInternal(connection, leader, timeStamp);
 
 			// Start new one
-			let timeStamp = Utility.getUnixTimeStamp();
 			let cmd = `INSERT INTO groups(leader, size, started, finished) VALUES(?, ?, ?, ?)`;
 			await connection.run(cmd, [leader, size, timeStamp, 0]);
 
