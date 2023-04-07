@@ -2,60 +2,22 @@ import { Client, EmbedBuilder, Message, TextChannel } from "discord.js";
 import { Logger } from "winston";
 import { Utility } from "./Utility";
 
+global.XMLHttpRequest = require("xhr2");
+
 const fs = require('fs');
 
 export abstract class BaseProcessor {
-	private isProcessing: boolean = false;
-
-	abstract process(onFinished: () => void): void;
-	abstract runIntervalInMs(): number;
-
-	private processWithFlag(): void {
-		if (this.isProcessing) {
-			return;
-		}
-
-		this.isProcessing = true;
-		this.process(() => this.isProcessing = false);
-
-	}
-
-	start(): void {
-		this.processWithFlag();
-		setInterval(() => this.processWithFlag(), this.runIntervalInMs());
-	}
-}
-
-export abstract class BaseProcessorImpl<StatusType> extends BaseProcessor {
 	private logger: Logger;
+	private processStarted: number = null;
+	private xhr: XMLHttpRequest;
 
-	channel: TextChannel;
-	status: StatusType;
-
-	constructor(client: Client) {
-		super();
-
+	constructor() {
 		this.logger = Utility.createLogger(this.getName());
-
-		this.status = this.loadStatus();
-
-		this.channel = <TextChannel>client.channels.cache.find(c => {
-			let gc = <TextChannel>c;
-			return gc.name === this.getChannelName();
-		});
-
-		this.logInfo(`Channel #${this.getChannelName()}'s id: ${this.channel.id}`);
 	}
 
 	abstract getName(): string;
-
-	getStatusFileName(): string {
-		return `status.${this.getName()}.json`;
-	}
-
-	getChannelName(): string {
-		return `bot-${this.getName()}`;
-	}
+	abstract process(onFinished: () => void): void;
+	abstract runIntervalInMs(): number;
 
 	logError(message: any): void {
 		this.logger.log({
@@ -73,9 +35,95 @@ export abstract class BaseProcessorImpl<StatusType> extends BaseProcessor {
 
 	async loadPage(url: string): Promise<string> {
 		this.logInfo(`Fetching data at url "${url}"`);
-		let request = await Utility.makeRequest('get', url);
 
-		return request;
+		let t = this;
+
+		return new Promise(function (resolve, reject) {
+			t.xhr = new XMLHttpRequest();
+			
+			t.xhr.open("get", url);
+			t.xhr.onload = function () {
+				if (this.status >= 200 && this.status < 300) {
+					resolve(t.xhr.responseText);
+				} else {
+					reject({
+						status: this.status,
+						statusText: t.xhr.statusText
+					});
+				}
+
+				t.xhr = null;
+			};
+			t.xhr.onerror = function () {
+				reject({
+					status: this.status,
+					statusText: t.xhr.statusText
+				});
+
+				t.xhr = null;
+			};
+
+			t.xhr.onabort = function() {
+				reject({
+					status: this.status,
+					statusText: "abort"
+				});
+
+				t.xhr = null;
+			}
+
+			t.xhr.send();
+		});		
+	}
+
+	private processWithFlag(): void {
+		if (this.processStarted != null) {
+			let diff = new Date().getTime() - this.processStarted;
+			let seconds = Math.floor(diff / (1000));
+			this.logInfo(`Can't run the process, since the last run is still in progress. It runs for ${seconds} seconds.`);
+
+			if (this.xhr != null)
+			{
+				this.logInfo(`Trying to abort the http request...`);
+				this.xhr.abort();
+			}
+			return;
+		}
+
+		this.processStarted = new Date().getTime();
+		this.process(() => this.processStarted = null);
+
+	}
+
+	start(): void {
+		this.processWithFlag();
+		setInterval(() => this.processWithFlag(), this.runIntervalInMs());
+	}
+}
+
+export abstract class BaseProcessorImpl<StatusType> extends BaseProcessor {
+	channel: TextChannel;
+	status: StatusType;
+
+	constructor(client: Client) {
+		super();
+
+		this.status = this.loadStatus();
+
+		this.channel = <TextChannel>client.channels.cache.find(c => {
+			let gc = <TextChannel>c;
+			return gc.name === this.getChannelName();
+		});
+
+		this.logInfo(`Channel #${this.getChannelName()}'s id: ${this.channel.id}`);
+	}
+
+	getStatusFileName(): string {
+		return `status.${this.getName()}.json`;
+	}
+
+	getChannelName(): string {
+		return `bot-${this.getName()}`;
 	}
 
 	loadStatus(): StatusType {

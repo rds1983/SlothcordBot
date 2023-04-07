@@ -77,10 +77,6 @@ export class AlertsProcessor extends BaseProcessorImpl<Event[]>
 	}
 
 	private static processEventWithParser(type: EventType, parser: EventParseInfo, text: string, time: string, newEvents: Event[]): boolean {
-		if (text.includes("Fraz-Urb'Luu")) {
-			let k = 5;
-		}
-
 		let m = parser.regex.exec(text);
 		if (m) {
 			let adventurer: string;

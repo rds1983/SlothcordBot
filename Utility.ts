@@ -3,8 +3,6 @@ import { Logger } from "winston";
 const winston = require('winston');
 const { combine, timestamp, printf } = winston.format;
 
-global.XMLHttpRequest = require("xhr2");
-
 export class Utility {
 	static createLogger(name: string): Logger {
 		return winston.createLogger({
@@ -18,30 +16,6 @@ export class Utility {
 				new winston.transports.Console(),
 				new winston.transports.File({ filename: `log.${name}.txt`, json: false }),
 			],
-		});
-	}
-
-	static makeRequest(method: string, url: string): Promise<string> {
-		return new Promise(function (resolve, reject) {
-			let xhr = new XMLHttpRequest();
-			xhr.open(method, url);
-			xhr.onload = function () {
-				if (this.status >= 200 && this.status < 300) {
-					resolve(xhr.responseText);
-				} else {
-					reject({
-						status: this.status,
-						statusText: xhr.statusText
-					});
-				}
-			};
-			xhr.onerror = function () {
-				reject({
-					status: this.status,
-					statusText: xhr.statusText
-				});
-			};
-			xhr.send();
 		});
 	}
 
