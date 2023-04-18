@@ -1,18 +1,18 @@
-import { Client, EmbedBuilder, Message, TextChannel } from "discord.js";
-import { Logger } from "winston";
+import { Client, Message, TextChannel, messageLink } from "discord.js";
 import { Utility } from "./Utility";
+import { LoggerWrapper } from "./LoggerWrapper";
 
 global.XMLHttpRequest = require("xhr2");
 
 const fs = require('fs');
 
 export abstract class BaseProcessor {
-	private logger: Logger;
+	private readonly loggerWrapper: LoggerWrapper;
 	private processStarted: number = null;
 	private xhr: XMLHttpRequest;
 
 	constructor() {
-		this.logger = Utility.createLogger(this.getName());
+		this.loggerWrapper = new LoggerWrapper(this.getName());
 	}
 
 	abstract getName(): string;
@@ -20,17 +20,11 @@ export abstract class BaseProcessor {
 	abstract runIntervalInMs(): number;
 
 	logError(message: any): void {
-		this.logger.log({
-			level: 'error',
-			message: Utility.toString(message)
-		});
+		this.loggerWrapper.logError(message);
 	}
 
 	logInfo(message: any): void {
-		this.logger.log({
-			level: 'info',
-			message: Utility.toString(message)
-		});
+		this.loggerWrapper.logInfo(message);
 	}
 
 	async loadPage(url: string): Promise<string> {
@@ -40,7 +34,7 @@ export abstract class BaseProcessor {
 
 		return new Promise(function (resolve, reject) {
 			t.xhr = new XMLHttpRequest();
-			
+
 			t.xhr.open("get", url);
 			t.xhr.onload = function () {
 				if (this.status >= 200 && this.status < 300) {
@@ -63,7 +57,7 @@ export abstract class BaseProcessor {
 				t.xhr = null;
 			};
 
-			t.xhr.onabort = function() {
+			t.xhr.onabort = function () {
 				reject({
 					status: this.status,
 					statusText: "abort"
@@ -73,7 +67,7 @@ export abstract class BaseProcessor {
 			}
 
 			t.xhr.send();
-		});		
+		});
 	}
 
 	private processWithFlag(): void {
@@ -82,8 +76,7 @@ export abstract class BaseProcessor {
 			let seconds = Math.floor(diff / (1000));
 			this.logInfo(`Can't run the process, since the last run is still in progress. It runs for ${seconds} seconds.`);
 
-			if (this.xhr != null)
-			{
+			if (this.xhr != null) {
 				this.logInfo(`Trying to abort the http request...`);
 				this.xhr.abort();
 			}
@@ -168,9 +161,7 @@ export abstract class BaseProcessorImpl<StatusType> extends BaseProcessor {
 
 	async sendMessage(message: string): Promise<Message<true>> {
 		this.logInfo(`${message}`);
-
-		const embed = new EmbedBuilder().setDescription(message);
-		return this.channel.send({ embeds: [embed] });
+		return Utility.sendMessage(this.channel, message);
 	}
 
 	async findMessage(includes: string): Promise<Message<true>> {

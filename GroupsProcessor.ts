@@ -168,15 +168,15 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 								newGroup.started = oldGroup.started;
 								leaderChanges[oldLeader] = newLeader;
 								await this.appendMessage(oldGroup.initialLeader, `The new leader is ${newLeader}.`, oldGroup.started);
-								await Statistics.logGroupEnded(oldLeader);
-								await Statistics.logGroupStarted(newLeader, newGroup.adventurers.length);
+								await Statistics.storeGroupEnded(oldLeader);
+								await Statistics.storeGroupStarted(newLeader, newGroup.adventurers.length);
 								break;
 							}
 						}
 
 						if (!changedLeader) {
 							await this.appendMessage(oldGroup.initialLeader, `The group is over.`, oldGroup.started);
-							await Statistics.logGroupEnded(oldLeader);
+							await Statistics.storeGroupEnded(oldLeader);
 						}
 					}
 				}
@@ -195,7 +195,7 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 					if (!(newLeader in this.status)) {
 						newGroup.started = new Date().getTime();
 						await this.sendMessage(`${newLeader} has started group '${newGroup.name}'. Group consists of ${newGroup.adventurers.length} adventurers.`)
-						await Statistics.logGroupStarted(newLeader, newGroup.adventurers.length);
+						await Statistics.storeGroupStarted(newLeader, newGroup.adventurers.length);
 					} else {
 						let oldGroup = this.status[newLeader];
 
@@ -216,8 +216,8 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 						}
 
 						if (oldGroup.adventurers.length != newGroup.adventurers.length) {
-							await Statistics.logGroupEnded(newLeader);
-							await Statistics.logGroupStarted(newLeader, newGroup.adventurers.length);
+							await Statistics.storeGroupEnded(newLeader);
+							await Statistics.storeGroupStarted(newLeader, newGroup.adventurers.length);
 						}
 					}
 				}

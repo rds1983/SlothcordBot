@@ -1,3 +1,5 @@
+import { Channel, EmbedBuilder, Message, TextChannel } from "discord.js";
+import moment from "moment";
 import { Logger } from "winston";
 
 const winston = require('winston');
@@ -54,6 +56,16 @@ export class Utility {
 
 	static getUnixTimeStamp(): number {
 		return Math.floor(new Date().getTime() / 1000);
+	}
+
+	static formatOnlyDate(value: number) {
+		return moment.unix(value).format("MMMM Do YYYY");
+	}
+
+
+	static async sendMessage(channel: TextChannel, message: string): Promise<Message<true>> {
+		const embed = new EmbedBuilder().setDescription(message);
+		return channel.send({ embeds: [embed] });
 	}
 }
 
