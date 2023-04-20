@@ -62,7 +62,6 @@ export class Utility {
 		return moment.unix(value).format("MMMM Do YYYY");
 	}
 
-
 	static async sendMessage(channel: TextChannel, message: string): Promise<Message<true>> {
 		const embed = new EmbedBuilder().setDescription(message);
 		return channel.send({ embeds: [embed] });

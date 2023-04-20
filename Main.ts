@@ -81,6 +81,26 @@ class Main {
 		this.fetchTopRaisersAsync(channel).catch(err => this.logError(err));
 	}
 
+	async fetchBestLeadersAsync(channel: TextChannel): Promise<void> {
+		let bestLeaders = await Statistics.fetchBestLeaders();
+
+		let message = `Best leaders rating from ${Utility.formatOnlyDate(bestLeaders.start)} to ${Utility.formatOnlyDate(bestLeaders.end)}.\n\n`;
+
+		for (let i = 0; i < bestLeaders.leaders.length && i < this.RatingMaximum; ++i) {
+			let d = bestLeaders.leaders[i];
+			let roundedSize = Math.round(d.totalSize / d.groupsCount);
+
+			message += `${i + 1}. ${d.name} led ${d.realGroupsCount} groups. The average group size was ${roundedSize}.\n`;
+		}
+
+		this.logInfo(message);
+		Utility.sendMessage(channel, message);
+	}
+
+	fetchBestLeaders(channel: TextChannel): void {
+		this.fetchBestLeadersAsync(channel).catch(err => this.logError(err));
+	}	
+
 	processMessage(msg: Message<boolean>) {
 		if (msg.author.bot) {
 			// Ignore bot messages
@@ -103,6 +123,8 @@ class Main {
 				this.fetchMostDeadly(msg.channel as TextChannel);
 			} else if (command == "topraisers") {
 				this.fetchTopRaisers(msg.channel as TextChannel);
+			} else if (command == "bestleaders") {
+				this.fetchBestLeaders(msg.channel as TextChannel);
 			}
 
 			/*				if (command == "epics") {

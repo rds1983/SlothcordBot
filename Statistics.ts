@@ -2,6 +2,7 @@ import sqlite3 from 'sqlite3';
 import { Database, open } from 'sqlite';
 import { Utility } from "./Utility";
 import { LoggerWrapper } from "./LoggerWrapper";
+import { stat } from 'fs';
 
 enum EventType {
 	Death,
@@ -28,6 +29,23 @@ export class MostDeadlyInfo extends BaseInfo {
 
 export class TopRaisersInfo extends BaseInfo {
 	public raisers: StatInfo[];
+}
+
+export class LeaderInfo {
+	public name: string;
+	public realGroupsCount: number = 0;
+	public groupsCount: number = 0;
+	public totalSize: number = 0;
+	public score: number = 0;
+}
+
+export class BestLeadersInfo extends BaseInfo {
+	public leaders: LeaderInfo[];
+}
+
+class RealGroup {
+	public rows: any[] = [];
+	public finished: number;
 }
 
 export class Statistics {
@@ -92,23 +110,29 @@ export class Statistics {
 
 
 	public static async storeGroupEnded(leader: string): Promise<void> {
+		let connection: Database = null;
 		try {
-			let connection = await this.openDb();
+			connection = await this.openDb();
 			let timeStamp = Utility.getUnixTimeStamp();
 			await this.storeGroupEndedInternal(connection, leader, timeStamp);
-			await connection.close();
 		}
 		catch (err) {
 			this.logError(err);
 		}
+		finally {
+			if (connection != null) {
+				await connection.close();
+			}
+		}
 	}
 
 	public static async storeGroupStarted(leader: string, size: number): Promise<void> {
+		let connection: Database = null;
 		try {
 			let timeStamp = Utility.getUnixTimeStamp();
 
 			// End existing group
-			let connection = await this.openDb();
+			connection = await this.openDb();
 			await this.storeGroupEndedInternal(connection, leader, timeStamp);
 
 			// Start new one
@@ -122,6 +146,11 @@ export class Statistics {
 		}
 		catch (err) {
 			this.logError(err);
+		}
+		finally {
+			if (connection != null) {
+				await connection.close();
+			}
 		}
 	}
 
@@ -138,101 +167,230 @@ export class Statistics {
 	}
 
 	public static async fetchTopDeaths(): Promise<TopDeathsInfo> {
-		let connection = await this.openDb();
+		let connection: Database = null;
 
-		let [start, end] = await this.fetchStartEndFromAlerts(connection);
+		try {
+			connection = await this.openDb();
 
-		let result: TopDeathsInfo =
-		{
-			start: start,
-			end: end,
-			players: []
-		};
+			let [start, end] = await this.fetchStartEndFromAlerts(connection);
 
-		let cmd = `SELECT adventurer, COUNT(adventurer) AS c FROM alerts GROUP BY adventurer ORDER BY c DESC`;
-		let data = await connection.all(cmd);
-		if (data === undefined) {
-			return;
-		}
-
-		for (let i = 0; i < data.length; ++i) {
-			let row = data[i];
-
-			let pdi: StatInfo =
+			let result: TopDeathsInfo =
 			{
-				name: row.adventurer,
-				count: row.c
+				start: start,
+				end: end,
+				players: []
 			};
 
-			result.players.push(pdi);
-		}
+			let cmd = `SELECT adventurer, COUNT(adventurer) AS c FROM alerts GROUP BY adventurer ORDER BY c DESC`;
+			let data = await connection.all(cmd);
+			for (let i = 0; i < data.length; ++i) {
+				let row = data[i];
 
-		return result;
+				let pdi: StatInfo =
+				{
+					name: row.adventurer,
+					count: row.c
+				};
+
+				result.players.push(pdi);
+			}
+
+			return result;
+		}
+		finally {
+			if (connection != null) {
+				await connection.close();
+			}
+		}
 	}
 
 	public static async fetchMostDeadlies(): Promise<MostDeadlyInfo> {
-		let connection = await this.openDb();
+		let connection: Database = null;
 
-		let [start, end] = await this.fetchStartEndFromAlerts(connection);
+		try {
+			connection = await this.openDb();
 
-		let result: MostDeadlyInfo =
-		{
-			start: start,
-			end: end,
-			deadlies: []
-		};
+			let [start, end] = await this.fetchStartEndFromAlerts(connection);
 
-		let cmd = `SELECT doer, COUNT(doer) AS c FROM alerts WHERE type = 0 GROUP BY doer ORDER BY c DESC`;
-		let data = await connection.all(cmd);
-		if (data === undefined) {
-			return;
-		}
-
-		for (let i = 0; i < data.length; ++i) {
-			let row = data[i];
-
-			let ki: StatInfo =
+			let result: MostDeadlyInfo =
 			{
-				name: row.doer,
-				count: row.c
+				start: start,
+				end: end,
+				deadlies: []
 			};
 
-			result.deadlies.push(ki);
-		}
+			let cmd = `SELECT doer, COUNT(doer) AS c FROM alerts WHERE type = 0 GROUP BY doer ORDER BY c DESC`;
+			let data = await connection.all(cmd);
+			for (let i = 0; i < data.length; ++i) {
+				let row = data[i];
 
-		return result;
+				let ki: StatInfo =
+				{
+					name: row.doer,
+					count: row.c
+				};
+
+				result.deadlies.push(ki);
+			}
+
+			return result;
+		}
+		finally {
+			if (connection != null) {
+				await connection.close();
+			}
+		}
 	}
 
 	public static async fetchTopRaisers(): Promise<TopRaisersInfo> {
-		let connection = await this.openDb();
+		let connection: Database = null;
 
-		let [start, end] = await this.fetchStartEndFromAlerts(connection);
+		try {
+			connection = await this.openDb();
+			let [start, end] = await this.fetchStartEndFromAlerts(connection);
 
-		let result: TopRaisersInfo =
-		{
-			start: start,
-			end: end,
-			raisers: []
-		};
-
-		let cmd = `SELECT doer, COUNT(doer) AS c FROM alerts WHERE type = 1 GROUP BY doer ORDER BY c DESC`;
-		let data = await connection.all(cmd);
-		if (data === undefined) {
-			return;
-		}
-
-		for (let i = 0; i < data.length; ++i) {
-			let row = data[i];
-
-			let ki: StatInfo =
+			let result: TopRaisersInfo =
 			{
-				name: row.doer,
-				count: row.c
+				start: start,
+				end: end,
+				raisers: []
 			};
 
-			result.raisers.push(ki);
-		}
+			let cmd = `SELECT doer, COUNT(doer) AS c FROM alerts WHERE type = 1 GROUP BY doer ORDER BY c DESC`;
+			let data = await connection.all(cmd);
+			for (let i = 0; i < data.length; ++i) {
+				let row = data[i];
 
-		return result;
+				let ki: StatInfo =
+				{
+					name: row.doer,
+					count: row.c
+				};
+
+				result.raisers.push(ki);
+			}
+
+			return result;
+		}
+		finally {
+			if (connection != null) {
+				await connection.close();
+			}
+		}
+	}
+
+	public static async fetchBestLeaders(): Promise<BestLeadersInfo> {
+		let connection: Database = null;
+
+		try {
+			connection = await this.openDb();
+
+			// Fetch all data
+			let cmd = `SELECT leader, size, started, finished FROM groups ORDER BY id`;
+			let data = await connection.all(cmd);
+
+			// First run: group all data by real groups
+			let realGroups: RealGroup[] = [];
+			let start: number = null;
+			let end: number = null;
+			for (let i = 0; i < data.length; ++i) {
+				let row = data[i];
+
+				if (row.finished == 0)
+				{
+					// Ignore ongoing groups
+					continue;
+				}
+				
+				if (start == null || row.started < start)
+				{
+					start = row.started;
+				}
+
+				if (end == null || row.finished > end)
+				{
+					end = row.finished;
+				}
+
+				// Find the group this row could be continuation of
+				// Check last 4 groups
+				let realGroup: RealGroup = null;
+				for (let j = realGroups.length - 1; j >= Math.max(0, realGroups.length - 4); --j) {
+					if (Math.abs(realGroups[j].finished - row.started) < 8) {
+						// Found
+						realGroup = realGroups[j];
+						break;
+					}
+				}
+
+				if (realGroup == null) {
+					realGroup = new RealGroup();
+					realGroups.push(realGroup);
+				}
+
+				realGroup.rows.push(row);
+				realGroup.finished = row.finished;
+			}
+
+			// Second run: build up statistics
+			let stats: { [leader: string]: LeaderInfo } = {};
+			for (let i = 0; i < realGroups.length; ++i) {
+				let realGroup = realGroups[i];
+				let leadersMask: { [leader: string]: boolean } = {};
+				for (let j = 0; j < realGroup.rows.length; ++j) {
+					let row = realGroup.rows[j];
+					let leaderInfo: LeaderInfo;
+
+					if (row.leader in stats)
+					{
+						leaderInfo = stats[row.leader];
+					} else
+					{
+						leaderInfo = new LeaderInfo();
+						leaderInfo.name = row.leader;
+						stats[row.leader] = leaderInfo;
+					}
+
+					if (!(row.leader in leadersMask))
+					{
+						leadersMask[row.leader] = true;
+						++leaderInfo.realGroupsCount;
+					}
+
+					++leaderInfo.groupsCount;
+					leaderInfo.totalSize += row.size;
+
+					let score = (row.finished - row.started) * row.size;
+					leaderInfo.score += score;
+				}
+			}
+
+			// HACK: Remove 'Whatta' and 'Unmace'
+			delete stats["Whatta"];
+			delete stats["Unmace"];
+
+			// Sort by score
+			var sortableArray = Object.entries(stats);
+			var sortedArray = sortableArray.sort(([, a], [, b]) => b.score - a.score);
+
+			let result: BestLeadersInfo =
+			{
+				start: start,
+				end: end,
+				leaders: []
+			};
+
+			for (let i = 0; i < sortedArray.length; ++i)
+			{
+				result.leaders.push(sortedArray[i][1]);
+			}
+
+			return result;
+		}
+		finally {
+			if (connection != null) {
+				await connection.close();
+			}
+		}
 	}
 }
