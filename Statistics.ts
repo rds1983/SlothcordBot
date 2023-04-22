@@ -2,7 +2,6 @@ import sqlite3 from 'sqlite3';
 import { Database, open } from 'sqlite';
 import { Utility } from "./Utility";
 import { LoggerWrapper } from "./LoggerWrapper";
-import { stat } from 'fs';
 
 enum EventType {
 	Death,

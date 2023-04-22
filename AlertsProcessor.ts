@@ -50,10 +50,10 @@ export class AlertsProcessor extends BaseProcessorImpl<Event[]>
 
 	private static readonly RaiseParsers: EventParseInfo[] =
 		[
-			new EventParseInfo("(\\w+) sold a piece of soul to the devil in exchange for (\\w+)'s worthless soul", true),
-			new EventParseInfo("The clerical genius (\\w+) successfully raised (\\w+)\\.", true),
-			new EventParseInfo("(\\w+)'s prayers were answered and (\\w+) was successfully raised\\.", true),
-			new EventParseInfo("(\\w+) raised from the dead by (\\w+)\\.", false)
+			new EventParseInfo("(.+) sold a piece of soul to the devil in exchange for (\\w+)'s worthless soul", true),
+			new EventParseInfo("The clerical genius (\\w+) successfully raised (.+)\\.", true),
+			new EventParseInfo("(.+)'s prayers were answered and (\\w+) was successfully raised\\.", true),
+			new EventParseInfo("(\\w+) raised from the dead by (.+)\\.", false)
 		];
 
 	private static readonly ShockParsers: EventParseInfo[] =
@@ -121,8 +121,7 @@ export class AlertsProcessor extends BaseProcessorImpl<Event[]>
 
 	async reportRaise(adventurer: string, raiser: string): Promise<void> {
 		// Find the raise message
-		let raiseMessage = await this.findMessage(`${adventurer} was slain by`);
-
+		let raiseMessage = await this.findMessage(`${adventurer} was slain by`, ["Raised by", "Shocked."]);
 		if (raiseMessage == null) {
 			this.logInfo(`WARNING: could not find death message of ${adventurer}`);
 			return;
@@ -145,8 +144,7 @@ export class AlertsProcessor extends BaseProcessorImpl<Event[]>
 
 	async reportShock(adventurer: string): Promise<void> {
 		// Find the raise message
-		let raiseMessage = await this.findMessage(`${adventurer} was slain by`);
-
+		let raiseMessage = await this.findMessage(`${adventurer} was slain by`, ["Raised by", "Shocked."]);
 		if (raiseMessage == null) {
 			this.logInfo(`WARNING: could not find death message of ${adventurer}`);
 			return;
@@ -207,7 +205,6 @@ export class AlertsProcessor extends BaseProcessorImpl<Event[]>
 				}
 
 				this.logInfo(`oldTopEventIndex: ${oldTopEventIndex}`);
-
 				if (oldTopEventIndex != null) {
 					// All events before oldTopEventIndex are new
 					// First report deaths

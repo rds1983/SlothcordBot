@@ -164,7 +164,7 @@ export abstract class BaseProcessorImpl<StatusType> extends BaseProcessor {
 		return Utility.sendMessage(this.channel, message);
 	}
 
-	async findMessage(includes: string): Promise<Message<true>> {
+	async findMessage(includes: string, excludes: string[] = null): Promise<Message<true>> {
 		let result: Message<true> = null;
 		let messages = await this.channel.messages.fetch({ limit: 10 });
 		let messagesArray = Array.from(messages.values());
@@ -173,11 +173,23 @@ export abstract class BaseProcessorImpl<StatusType> extends BaseProcessor {
 			if (message.embeds.length == 0) {
 				continue;
 			}
-			let embed = message.embeds[0];
 
+			let embed = message.embeds[0];
 			if (embed.description.includes(includes)) {
-				result = message;
-				break;
+				let containsExclude = false;
+				if (excludes != null) {
+					for (let j = 0; j < excludes.length; ++j) {
+						if (embed.description.includes(excludes[j])) {
+							containsExclude = true;
+							break;
+						}
+					}
+				}
+
+				if (!containsExclude) {
+					result = message;
+					break;
+				}
 			}
 		}
 
