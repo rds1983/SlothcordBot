@@ -72,17 +72,21 @@ export class Statistics {
 	}
 
 	private static async storeAlertAsync(type: EventType, adventurer: string, doer: string, gameTime: string): Promise<void> {
-		let connection = await this.openDb();
+		let connection: Database = null;
+		try {
+			connection = await this.openDb();
 
-		let timeStamp = Utility.getUnixTimeStamp();
-		let cmd = `INSERT INTO alerts(type, adventurer, doer, gameTime, timeStamp) VALUES(?, ?, ?, ?, ?)`;
-		let result = await connection.run(cmd, [type, adventurer, doer, gameTime, timeStamp]);
-
-		await connection.close();
-
-		let eventId = result.lastID;
-
-		this.logInfo(`Added ${type} alert #${eventId}: ${adventurer}, ${doer}, ${gameTime}, ${timeStamp}`);
+			let timeStamp = Utility.getUnixTimeStamp();
+			let cmd = `INSERT INTO alerts(type, adventurer, doer, gameTime, timeStamp) VALUES(?, ?, ?, ?, ?)`;
+			let result = await connection.run(cmd, [type, adventurer, doer, gameTime, timeStamp]);
+			let eventId = result.lastID;
+			this.logInfo(`Added ${type} alert #${eventId}: ${adventurer}, ${doer}, ${gameTime}, ${timeStamp}`);
+		}
+		finally {
+			if (connection != null) {
+				await connection.close();
+			}
+		}
 	}
 
 	static async storeDeath(adventurer: string, killer: string, gameTime: string): Promise<void> {
@@ -139,9 +143,6 @@ export class Statistics {
 			await connection.run(cmd, [leader, size, timeStamp, 0]);
 
 			this.logInfo(`${leader} started group with size ${size} at ${timeStamp}`);
-
-
-			await connection.close();
 		}
 		catch (err) {
 			this.logError(err);
@@ -295,19 +296,16 @@ export class Statistics {
 			for (let i = 0; i < data.length; ++i) {
 				let row = data[i];
 
-				if (row.finished == 0)
-				{
+				if (row.finished == 0) {
 					// Ignore ongoing groups
 					continue;
 				}
-				
-				if (start == null || row.started < start)
-				{
+
+				if (start == null || row.started < start) {
 					start = row.started;
 				}
 
-				if (end == null || row.finished > end)
-				{
+				if (end == null || row.finished > end) {
 					end = row.finished;
 				}
 
@@ -340,18 +338,15 @@ export class Statistics {
 					let row = realGroup.rows[j];
 					let leaderInfo: LeaderInfo;
 
-					if (row.leader in stats)
-					{
+					if (row.leader in stats) {
 						leaderInfo = stats[row.leader];
-					} else
-					{
+					} else {
 						leaderInfo = new LeaderInfo();
 						leaderInfo.name = row.leader;
 						stats[row.leader] = leaderInfo;
 					}
 
-					if (!(row.leader in leadersMask))
-					{
+					if (!(row.leader in leadersMask)) {
 						leadersMask[row.leader] = true;
 						++leaderInfo.realGroupsCount;
 					}
@@ -379,8 +374,7 @@ export class Statistics {
 				leaders: []
 			};
 
-			for (let i = 0; i < sortedArray.length; ++i)
-			{
+			for (let i = 0; i < sortedArray.length; ++i) {
 				result.leaders.push(sortedArray[i][1]);
 			}
 
