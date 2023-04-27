@@ -154,6 +154,29 @@ export class Statistics {
 		}
 	}
 
+	public static async storeSale(seller: string, item: string, price: number): Promise<void> {
+		let connection: Database = null;
+		try {
+			connection = await this.openDb();
+
+			let timeStamp = Utility.getUnixTimeStamp();
+
+			// Start new one
+			let cmd = `INSERT INTO sales(seller, item, price, timeStamp) VALUES(?, ?, ?, ?)`;
+			await connection.run(cmd, [seller, item, price, timeStamp]);
+
+			this.logInfo(`${seller} sold ${item} for ${price} at ${timeStamp}`);
+		}
+		catch (err) {
+			this.logError(err);
+		}
+		finally {
+			if (connection != null) {
+				await connection.close();
+			}
+		}
+	}
+
 	private static async fetchStartEndFromAlerts(connection: Database): Promise<[number, number]> {
 		let cmd = `SELECT MIN(timestamp) as min FROM alerts`;
 		let val = await connection.get(cmd);

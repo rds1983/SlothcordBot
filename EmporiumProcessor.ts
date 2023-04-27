@@ -1,6 +1,7 @@
 import { JSDOM } from "jsdom";
 import { BaseProcessorImpl } from "./BaseProcessor";
 import { Utility } from "./Utility";
+import { Statistics } from "./Statistics";
 
 class Auction {
 	name: string;
@@ -25,18 +26,32 @@ export class EmporiumProcessor extends BaseProcessorImpl<{ [seller: string]: Auc
 		return `[${name}](http://slothmudeq.ml/?search=${encodeURI(name)})`;
 	}
 
+	private static priceToNumber(price: string): number {
+		price = price.replace(/,/g, "");
+		return parseInt(price);
+	}	
+
 	async reportNewItem(seller: string, name: string, price: string, buyout: string, ends: string): Promise<void> {
 		let link = EmporiumProcessor.buildItemLink(name);
-		this.sendMessage(`${seller} has put '${link}' on sale. Price/buyout is ${price}/${buyout}. The sale ends in ${ends}.`);
+		await this.sendMessage(`${seller} has put '${link}' on sale. Price/buyout is ${price}/${buyout}. The sale ends in ${ends}.`);
 	}
 
-	async reportSoldItem(seller: string, name: string, bidder: string, price: string): Promise<void> {
+	async reportSoldItem(seller: string, name: string, bidder: string, price: string, ends: string): Promise<void> {
 		let link = EmporiumProcessor.buildItemLink(name);
 
+		let minutesLeft = this.convertEndsToMinutes(ends);
 		if (bidder.toLowerCase() == "nobody") {
-			this.sendMessage(`${seller}'s item '${link}' is no longer available for sale.`);
+			if (minutesLeft < 20)
+			{
+				await this.sendMessage(`${seller}'s item '${link}' is no longer available for sale.`);
+			} else
+			{
+				await this.sendMessage(`${seller}'s item '${link}' had been bought out.`);
+				await Statistics.storeSale(seller, name, EmporiumProcessor.priceToNumber(price));
+			}
 		} else {
-			this.sendMessage(`${seller}'s item '${link}' had been sold to ${bidder} for ${price}.`);
+			await this.sendMessage(`${seller}'s item '${link}' had been sold to ${bidder} for ${price}.`);
+			await Statistics.storeSale(seller, name, EmporiumProcessor.priceToNumber(price));
 		}
 	}
 
@@ -195,7 +210,7 @@ export class EmporiumProcessor extends BaseProcessorImpl<{ [seller: string]: Auc
 							}
 
 							let item = oldData[i];
-							await this.reportSoldItem(seller, item.name, item.bidder, item.price);
+							await this.reportSoldItem(seller, item.name, item.bidder, item.price, item.ends);
 						}
 					}
 				}
@@ -206,7 +221,7 @@ export class EmporiumProcessor extends BaseProcessorImpl<{ [seller: string]: Auc
 						let items = this.status[seller];
 						for (let i = 0; i < items.length; ++i) {
 							let item = items[i];
-							await this.reportSoldItem(seller, item.name, item.bidder, item.price);
+							await this.reportSoldItem(seller, item.name, item.bidder, item.price, item.ends);
 						}
 					}
 				}
