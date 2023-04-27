@@ -44,7 +44,7 @@ export class EmporiumProcessor extends BaseProcessorImpl<{ [seller: string]: Auc
 			if (minutesLeft < 40) {
 				await this.sendMessage(`${seller}'s item '${link}' is no longer available for sale.`);
 			} else {
-				await this.sendMessage(`${seller}'s item '${link}' had been bought out.`);
+				await this.sendMessage(`${seller}'s item '${link}' had been bought out for ${buyout}.`);
 				await Statistics.storeSale(seller, name, EmporiumProcessor.priceToNumber(buyout));
 			}
 		} else {
