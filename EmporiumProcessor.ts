@@ -41,7 +41,7 @@ export class EmporiumProcessor extends BaseProcessorImpl<{ [seller: string]: Auc
 
 		let minutesLeft = this.convertEndsToMinutes(ends);
 		if (bidder.toLowerCase() == "nobody") {
-			if (minutesLeft < 20)
+			if (minutesLeft < 40)
 			{
 				await this.sendMessage(`${seller}'s item '${link}' is no longer available for sale.`);
 			} else
