@@ -204,7 +204,7 @@ export class Statistics {
 				players: []
 			};
 
-			let cmd = `SELECT adventurer, COUNT(adventurer) AS c FROM alerts GROUP BY adventurer ORDER BY c DESC`;
+			let cmd = `SELECT adventurer, COUNT(adventurer) AS c FROM alerts WHERE type = 0 GROUP BY adventurer ORDER BY c DESC`;
 			let data = await connection.all(cmd);
 			for (let i = 0; i < data.length; ++i) {
 				let row = data[i];
