@@ -153,17 +153,23 @@ class Main {
 					let adventurer = parts[1];
 					// Check ownership
 					let charOwned = 0;
-					for (let user2 in Global.usersToCharacters) {
-						if (user.toLowerCase() == user2.toLowerCase()) {
-							charOwned = 1;
-							let characters = Global.usersToCharacters[user];
-							for (let i = 0; i < characters.length; ++i) {
-								if (adventurer.toLowerCase() == characters[i].toLowerCase()) {
-									charOwned = 2;
-									break;
+					if (user.toLowerCase() == adventurer.toLowerCase()) {
+						// By default, everyone owns a character similarly named than their user
+						charOwned = 2;
+					} else {
+						// Otherwise try to find the characters in the special map
+						for (let user2 in Global.usersToCharacters) {
+							if (user.toLowerCase() == user2.toLowerCase()) {
+								charOwned = 1;
+								let characters = Global.usersToCharacters[user];
+								for (let i = 0; i < characters.length; ++i) {
+									if (adventurer.toLowerCase() == characters[i].toLowerCase()) {
+										charOwned = 2;
+										break;
+									}
 								}
+								break;
 							}
-							break;
 						}
 					}
 
