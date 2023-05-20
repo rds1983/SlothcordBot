@@ -135,9 +135,9 @@ class Main {
 		}
 
 		try {
-			var command = msg.content.substring(1).toLowerCase();
-			this.logInfo(`Command: ${command}`);
+			this.logInfo(`User: ${msg.author.username}, Command: ${msg.content.substring(1)}`);
 
+			var command = msg.content.substring(1).toLowerCase();
 			let channel = msg.channel as TextChannel;
 			if (command == "topdeaths") {
 				this.fetchTopDeaths(channel);
