@@ -354,6 +354,7 @@ export class Statistics {
 
 			// Second run: build up statistics
 			let stats: { [leader: string]: LeaderInfo } = {};
+			let lastLeader: string = null;
 			for (let i = 0; i < realGroups.length; ++i) {
 				let realGroup = realGroups[i];
 				let leadersMask: { [leader: string]: boolean } = {};
@@ -378,7 +379,14 @@ export class Statistics {
 					leaderInfo.totalSize += row.size;
 
 					let score = (row.finished - row.started) * row.size;
+
+					// 30 free minutes for every new leader to balance out out-of-sync website info
+					if (lastLeader != row.leader) {
+						score += 30 * 60 * row.size;
+					}
+
 					leaderInfo.score += score;
+					lastLeader = row.leader;
 				}
 			}
 
