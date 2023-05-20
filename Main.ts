@@ -11,6 +11,9 @@ import { BaseProcessor } from "./BaseProcessor";
 import { Utility } from "./Utility";
 
 Global.config = require('./config.json');
+Global.usersToCharacters = require('./usersToCharacters.json');
+
+let s = Global.usersToCharacters;
 
 class Main {
 	private readonly RatingMaximum: number = 10;
@@ -46,7 +49,7 @@ class Main {
 	}
 
 	async fetchMostDeadlyAsync(channel: TextChannel): Promise<void> {
-		let mostDeadly = await Statistics.fetchMostDeadlies();
+		let mostDeadly = await Statistics.fetchMostDeadly();
 
 		let message = `Most deadly rating from ${Utility.formatOnlyDate(mostDeadly.start)} to ${Utility.formatOnlyDate(mostDeadly.end)}.\n\n`;
 
@@ -61,6 +64,24 @@ class Main {
 
 	fetchMostDeadly(channel: TextChannel): void {
 		this.fetchMostDeadlyAsync(channel).catch(err => this.logError(err));
+	}
+
+	async fetchMostDeadlyForAsync(channel: TextChannel, character: string): Promise<void> {
+		let mostDeadly = await Statistics.fetchMostDeadlyFor(character);
+
+		let message = `Most deadly rating for ${character} from ${Utility.formatOnlyDate(mostDeadly.start)} to ${Utility.formatOnlyDate(mostDeadly.end)}.\n\n`;
+
+		for (let i = 0; i < mostDeadly.deadlies.length && i < this.RatingMaximum; ++i) {
+			let d = mostDeadly.deadlies[i];
+			message += `${i + 1}. ${d.name} killed ${d.count} times.\n`;
+		}
+
+		this.logInfo(message);
+		Utility.sendMessage(channel, message);
+	}
+
+	fetchMostDeadlyFor(channel: TextChannel, character: string): void {
+		this.fetchMostDeadlyForAsync(channel, character).catch(err => this.logError(err));
 	}
 
 	async fetchTopRaisersAsync(channel: TextChannel): Promise<void> {
@@ -99,7 +120,7 @@ class Main {
 
 	fetchBestLeaders(channel: TextChannel): void {
 		this.fetchBestLeadersAsync(channel).catch(err => this.logError(err));
-	}	
+	}
 
 	processMessage(msg: Message<boolean>) {
 		if (msg.author.bot) {
@@ -117,14 +138,52 @@ class Main {
 			var command = msg.content.substring(1).toLowerCase();
 			this.logInfo(`Command: ${command}`);
 
+			let channel = msg.channel as TextChannel;
 			if (command == "topdeaths") {
-				this.fetchTopDeaths(msg.channel as TextChannel);
+				this.fetchTopDeaths(channel);
 			} else if (command == "mostdeadly") {
-				this.fetchMostDeadly(msg.channel as TextChannel);
-			} else if (command == "topraisers") {
-				this.fetchTopRaisers(msg.channel as TextChannel);
+				this.fetchMostDeadly(channel);
+			}
+			else if (command.startsWith("mostdeadlyfor")) {
+				let parts = content.split(' ');
+				if (parts.length != 2) {
+					Utility.sendMessage(channel, "Usage: !mostdeadlyfor adventurer_name");
+				} else {
+					let user = msg.author.username;
+					let adventurer = parts[1];
+					// Check ownership
+					let charOwned = 0;
+					for (let user2 in Global.usersToCharacters) {
+						if (user.toLowerCase() == user2.toLowerCase()) {
+							charOwned = 1;
+							let characters = Global.usersToCharacters[user];
+							for (let i = 0; i < characters.length; ++i) {
+								if (adventurer.toLowerCase() == characters[i].toLowerCase()) {
+									charOwned = 2;
+									break;
+								}
+							}
+							break;
+						}
+					}
+
+					switch (charOwned) {
+						case 0:
+							Utility.sendMessage(channel, `Sorry, ${user}, but I don't contain the information about your characters. Contact Yang to fix that.`);
+							break;
+						case 1:
+							Utility.sendMessage(channel, `Sorry, ${user}, but you don't seem to own the character ${adventurer}. Contact Yang if my information is incorrect.`);
+							break;
+						case 2:
+							this.fetchMostDeadlyFor(channel, parts[1]);
+							break;
+					}
+				}
+			}
+			else if (command == "topraisers") {
+				this.fetchTopRaisers(channel);
 			} else if (command == "bestleaders") {
-				this.fetchBestLeaders(msg.channel as TextChannel);
+				this.fetchBestLeaders(channel);
 			}
 
 			/*				if (command == "epics") {

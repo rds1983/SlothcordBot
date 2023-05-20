@@ -7,4 +7,5 @@ export class Config
 export class Global
 {
 	static config: Config;
+	static usersToCharacters: { [user: string]: string[] };
 }

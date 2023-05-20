@@ -227,7 +227,7 @@ export class Statistics {
 		}
 	}
 
-	public static async fetchMostDeadlies(): Promise<MostDeadlyInfo> {
+	public static async fetchMostDeadly(): Promise<MostDeadlyInfo> {
 		let connection: Database = null;
 
 		try {
@@ -243,6 +243,45 @@ export class Statistics {
 			};
 
 			let cmd = `SELECT doer, COUNT(doer) AS c FROM alerts WHERE type = 0 GROUP BY doer ORDER BY c DESC`;
+			let data = await connection.all(cmd);
+			for (let i = 0; i < data.length; ++i) {
+				let row = data[i];
+
+				let ki: StatInfo =
+				{
+					name: row.doer,
+					count: row.c
+				};
+
+				result.deadlies.push(ki);
+			}
+
+			return result;
+		}
+		finally {
+			if (connection != null) {
+				await connection.close();
+			}
+		}
+	}
+
+	public static async fetchMostDeadlyFor(character: string): Promise<MostDeadlyInfo> {
+		let connection: Database = null;
+
+		try {
+			connection = await this.openDb();
+
+			let [start, end] = await this.fetchStartEndFromAlerts(connection);
+
+			let result: MostDeadlyInfo =
+			{
+				start: start,
+				end: end,
+				deadlies: []
+			};
+
+			// character should be passed as parameter, but for some reason it generates SQLITE_RANGE error
+			let cmd = `SELECT doer, COUNT(doer) AS c FROM alerts WHERE type = 0 AND adventurer = '${character}' COLLATE NOCASE GROUP BY doer ORDER BY c DESC`;
 			let data = await connection.all(cmd);
 			for (let i = 0; i < data.length; ++i) {
 				let row = data[i];
@@ -381,9 +420,7 @@ export class Statistics {
 					let score = (row.finished - row.started) * row.size;
 
 					// 30 free minutes for every new leader to balance out out-of-sync website info
-					if (lastLeader != row.leader) {
-						score += 30 * 60 * row.size;
-					}
+					score += 30 * 60 * row.size;
 
 					leaderInfo.score += score;
 					lastLeader = row.leader;
