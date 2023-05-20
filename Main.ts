@@ -73,7 +73,7 @@ class Main {
 
 		for (let i = 0; i < mostDeadly.deadlies.length && i < this.RatingMaximum; ++i) {
 			let d = mostDeadly.deadlies[i];
-			message += `${i + 1}. ${d.name} killed ${d.count} times.\n`;
+			message += `${i + 1}. ${d.name} killed you ${d.count} times.\n`;
 		}
 
 		this.logInfo(message);
