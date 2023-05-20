@@ -90,7 +90,7 @@ class Main {
 			let d = bestLeaders.leaders[i];
 			let roundedSize = Math.round(d.totalSize / d.groupsCount);
 
-			message += `${i + 1}. ${d.name} led ${d.realGroupsCount} groups. The average group size was ${roundedSize}.\n`;
+			message += `${i + 1}. ${d.name} led ${d.realGroupsCount} groups. Average group size was ${roundedSize}. Overall score is ${Utility.formatNumber(d.score)}.\n`;
 		}
 
 		this.logInfo(message);

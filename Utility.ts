@@ -1,3 +1,4 @@
+
 import { Channel, EmbedBuilder, Message, TextChannel } from "discord.js";
 import moment from "moment";
 import { Logger } from "winston";
@@ -21,7 +22,7 @@ export class Utility {
 		});
 	}
 
-	static formatTwoDigits(num: number) {
+	static formatTwoDigits(num: number): string {
 		let result = `${num}`;
 
 		if (num < 10) {
@@ -29,6 +30,10 @@ export class Utility {
 		}
 
 		return result;
+	}
+
+	static formatNumber(num: number): string {
+		return num.toLocaleString("en-US");
 	}
 
 	static toString(obj: any) {
