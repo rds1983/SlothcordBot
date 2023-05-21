@@ -416,15 +416,18 @@ export class Statistics {
 					++leaderInfo.groupsCount;
 					leaderInfo.totalSize += row.size;
 
-					var leadTimeInSeconds = row.finished - row.started;
+					let leadTimeInSeconds = row.finished - row.started;
 
 					// Single row leads should receive at least 30 mins of time to balance out website groups sync issues
-					if (j < realGroup.rows.length - 1 && realGroup.rows[j + 1].leader != row.leader)
-					{
-						if (leadTimeInSeconds < 30 * 60)
-						{
-							leadTimeInSeconds = 30 * 60;
-						}
+					let singleRowLead = false;
+					if (j < realGroup.rows.length - 1 && realGroup.rows[j + 1].leader != row.leader) {
+						singleRowLead = true;
+					} else if (j > 0 && j == realGroup.rows.length - 1 && realGroup.rows[j - 1].leader != row.leader) {
+						singleRowLead = true;
+					}
+
+					if (singleRowLead && leadTimeInSeconds < 30 * 60) {
+						leadTimeInSeconds = 30 * 60;
 					}
 
 					let score = leadTimeInSeconds * row.size;
