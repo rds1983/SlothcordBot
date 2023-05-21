@@ -393,7 +393,6 @@ export class Statistics {
 
 			// Second run: build up statistics
 			let stats: { [leader: string]: LeaderInfo } = {};
-			let lastLeader: string = null;
 			for (let i = 0; i < realGroups.length; ++i) {
 				let realGroup = realGroups[i];
 				let leadersMask: { [leader: string]: boolean } = {};
@@ -417,13 +416,19 @@ export class Statistics {
 					++leaderInfo.groupsCount;
 					leaderInfo.totalSize += row.size;
 
-					let score = (row.finished - row.started) * row.size;
+					var leadTimeInSeconds = row.finished - row.started;
 
-					// 30 free minutes for every new leader to balance out out-of-sync website info
-					score += 30 * 60 * row.size;
+					// Single row leads should receive at least 30 mins of time to balance out website groups sync issues
+					if (j < realGroup.rows.length - 1 && realGroup.rows[j + 1].leader != row.leader)
+					{
+						if (leadTimeInSeconds < 30 * 60)
+						{
+							leadTimeInSeconds = 30 * 60;
+						}
+					}
 
+					let score = leadTimeInSeconds * row.size;
 					leaderInfo.score += score;
-					lastLeader = row.leader;
 				}
 			}
 
