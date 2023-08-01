@@ -23,7 +23,7 @@ export class EmporiumProcessor extends BaseProcessorImpl<{ [seller: string]: Auc
 	}
 
 	static buildItemLink(name: string): string {
-		return `[${name}](http://slothmudeq.ml/?search=${encodeURI(name)})`;
+		return `[${name}](http://eq.slothmud.org/?search=${encodeURI(name)})`;
 	}
 
 	private static priceToNumber(price: string): number {
