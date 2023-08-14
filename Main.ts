@@ -92,7 +92,7 @@ class Main {
 		message += `You died ${mostDeadly.deathsCount} times.\n`;
 		message += `You were raised ${mostDeadly.wereRaisedCount} times.\n`;
 		message += `You raised someone ${mostDeadly.raisedSomeoneCount} times.\n`;
-		message += `You sold ${mostDeadly.salesCount} items for the ${mostDeadly.salesSum} gold coins.\n`;
+		message += `You sold ${mostDeadly.salesCount} items for ${mostDeadly.salesSum} gold coins at the auction.\n`;
 
 		this.logInfo(message);
 		Utility.sendMessage(channel, message);
