@@ -84,6 +84,24 @@ class Main {
 		this.fetchMostDeadlyForAsync(channel, character).catch(err => this.logError(err));
 	}
 
+	async fetchStatForAsync(channel: TextChannel, character: string): Promise<void> {
+		let mostDeadly = await Statistics.fetchStatFor(character);
+
+		let message = `Statistics for ${character} from ${Utility.formatOnlyDate(mostDeadly.start)} to ${Utility.formatOnlyDate(mostDeadly.end)}.\n\n`;
+
+		message += `You died ${mostDeadly.deathsCount} times.\n`;
+		message += `You were raised ${mostDeadly.wereRaisedCount} times.\n`;
+		message += `You raised someone ${mostDeadly.raisedSomeoneCount} times.\n`;
+		message += `You sold ${mostDeadly.salesCount} items for the ${mostDeadly.salesSum} gold coins.\n`;
+
+		this.logInfo(message);
+		Utility.sendMessage(channel, message);
+	}
+
+	fetchStatFor(channel: TextChannel, character: string): void {
+		this.fetchStatForAsync(channel, character).catch(err => this.logError(err));
+	}
+
 	async fetchTopRaisersAsync(channel: TextChannel): Promise<void> {
 		let topRaisers = await Statistics.fetchTopRaisers();
 
@@ -122,6 +140,42 @@ class Main {
 		this.fetchBestLeadersAsync(channel).catch(err => this.logError(err));
 	}
 
+	checkOwnership(user: string, adventurer: string, channel: TextChannel): boolean {
+		let charOwned = 0;
+		if (user.toLowerCase() == adventurer.toLowerCase()) {
+			// By default, everyone owns a character similarly named than their user
+			charOwned = 2;
+		} else {
+			// Otherwise try to find the characters in the special map
+			for (let user2 in Global.usersToCharacters) {
+				if (user.toLowerCase() == user2.toLowerCase()) {
+					charOwned = 1;
+					let characters = Global.usersToCharacters[user];
+					for (let i = 0; i < characters.length; ++i) {
+						if (adventurer.toLowerCase() == characters[i].toLowerCase()) {
+							charOwned = 2;
+							break;
+						}
+					}
+					break;
+				}
+			}
+		}
+
+		switch (charOwned) {
+			case 0:
+				Utility.sendMessage(channel, `Sorry, ${user}, but I don't contain the information about your characters. Contact Yang to fix that.`);
+				break;
+			case 1:
+				Utility.sendMessage(channel, `Sorry, ${user}, but you don't seem to own the character ${adventurer}. Contact Yang if my information is incorrect.`);
+				break;
+			case 2:
+				return true;
+		}
+
+		return false;
+	}
+
 	processMessage(msg: Message<boolean>) {
 		if (msg.author.bot) {
 			// Ignore bot messages
@@ -151,38 +205,9 @@ class Main {
 				} else {
 					let user = msg.author.username;
 					let adventurer = parts[1];
-					// Check ownership
-					let charOwned = 0;
-					if (user.toLowerCase() == adventurer.toLowerCase()) {
-						// By default, everyone owns a character similarly named than their user
-						charOwned = 2;
-					} else {
-						// Otherwise try to find the characters in the special map
-						for (let user2 in Global.usersToCharacters) {
-							if (user.toLowerCase() == user2.toLowerCase()) {
-								charOwned = 1;
-								let characters = Global.usersToCharacters[user];
-								for (let i = 0; i < characters.length; ++i) {
-									if (adventurer.toLowerCase() == characters[i].toLowerCase()) {
-										charOwned = 2;
-										break;
-									}
-								}
-								break;
-							}
-						}
-					}
 
-					switch (charOwned) {
-						case 0:
-							Utility.sendMessage(channel, `Sorry, ${user}, but I don't contain the information about your characters. Contact Yang to fix that.`);
-							break;
-						case 1:
-							Utility.sendMessage(channel, `Sorry, ${user}, but you don't seem to own the character ${adventurer}. Contact Yang if my information is incorrect.`);
-							break;
-						case 2:
-							this.fetchMostDeadlyFor(channel, parts[1]);
-							break;
+					if (this.checkOwnership(user, adventurer, channel)) {
+						this.fetchMostDeadlyFor(channel, adventurer);
 					}
 				}
 			}
@@ -190,6 +215,19 @@ class Main {
 				this.fetchTopRaisers(channel);
 			} else if (command == "bestleaders") {
 				this.fetchBestLeaders(channel);
+			} else if (command.startsWith("statfor")) {
+				let parts = content.split(' ');
+				if (parts.length != 2) {
+					Utility.sendMessage(channel, "Usage: !statfor adventurer_name");
+				} else {
+					let user = msg.author.username;
+					let adventurer = parts[1];
+
+					if (this.checkOwnership(user, adventurer, channel)) 
+					{
+						this.fetchStatFor(channel, adventurer);
+					}
+				}
 			}
 
 			/*				if (command == "epics") {

@@ -26,6 +26,14 @@ export class MostDeadlyInfo extends BaseInfo {
 	public deadlies: StatInfo[];
 }
 
+export class StatForInfo extends BaseInfo {
+	public deathsCount: number;
+	public wereRaisedCount: number;
+	public raisedSomeoneCount: number;
+	public salesCount: number;
+	public salesSum: string;
+}
+
 export class TopRaisersInfo extends BaseInfo {
 	public raisers: StatInfo[];
 }
@@ -294,6 +302,55 @@ export class Statistics {
 
 				result.deadlies.push(ki);
 			}
+
+			return result;
+		}
+		finally {
+			if (connection != null) {
+				await connection.close();
+			}
+		}
+	}
+
+	public static async fetchStatFor(character: string): Promise<StatForInfo> {
+		let connection: Database = null;
+
+		try {
+			connection = await this.openDb();
+
+			let [start, end] = await this.fetchStartEndFromAlerts(connection);
+
+			let cmd = `SELECT COUNT(id) AS c FROM alerts WHERE type = 0 AND adventurer = '${character}' COLLATE NOCASE`;
+			let data = await connection.all(cmd);
+
+			let deathsCount = data[0].c;
+
+			cmd = `SELECT COUNT(id) AS c FROM alerts WHERE type = 1 AND adventurer = '${character}' COLLATE NOCASE`;
+			data = await connection.all(cmd);
+
+			let wereRaisedCount = data[0].c;
+
+			cmd = `SELECT COUNT(id) AS c FROM alerts WHERE type = 1 AND doer = '${character}' COLLATE NOCASE`;
+			data = await connection.all(cmd);
+
+			let raisedSomeoneCount = data[0].c;
+
+			cmd = `SELECT COUNT(id) as c, SUM(price) AS s FROM sales WHERE seller = '${character}' COLLATE NOCASE`;
+			data = await connection.all(cmd);
+
+			let salesCount = data[0].c;
+			let salesSum = data[0].s != null ? Utility.formatNumber(data[0].s) : "0";
+
+			let result: StatForInfo =
+			{
+				start: start,
+				end: end,
+				deathsCount: deathsCount,
+				wereRaisedCount: wereRaisedCount,
+				raisedSomeoneCount: raisedSomeoneCount,
+				salesCount: salesCount,
+				salesSum: salesSum
+			};
 
 			return result;
 		}
