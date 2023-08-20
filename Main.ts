@@ -176,6 +176,13 @@ class Main {
 		return false;
 	}
 
+	help(channel: TextChannel) {
+		let message = "I know following commands:\n!topdeaths\n!mostdeadly\n!topraisers\n!bestleaders\n!mostdeadlyfor player_name\n!statfor player_name";
+
+		this.logInfo(message);
+		Utility.sendMessage(channel, message);
+	}
+
 	processMessage(msg: Message<boolean>) {
 		if (msg.author.bot) {
 			// Ignore bot messages
@@ -193,7 +200,9 @@ class Main {
 
 			var command = msg.content.substring(1).toLowerCase();
 			let channel = msg.channel as TextChannel;
-			if (command == "topdeaths") {
+			if (command == "help") {
+				this.help(channel);
+			} else if (command == "topdeaths") {
 				this.fetchTopDeaths(channel);
 			} else if (command == "mostdeadly") {
 				this.fetchMostDeadly(channel);
@@ -223,8 +232,7 @@ class Main {
 					let user = msg.author.username;
 					let adventurer = parts[1];
 
-					if (this.checkOwnership(user, adventurer, channel)) 
-					{
+					if (this.checkOwnership(user, adventurer, channel)) {
 						this.fetchStatFor(channel, adventurer);
 					}
 				}
