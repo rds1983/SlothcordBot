@@ -18,8 +18,13 @@ export class StatInfo {
 	public count: number;
 }
 
+export class TopDeathsStatInfo extends StatInfo {
+	public raises: number;
+}
+
+
 export class TopDeathsInfo extends BaseInfo {
-	public players: StatInfo[];
+	public players: TopDeathsStatInfo[];
 }
 
 export class MostDeadlyInfo extends BaseInfo {
@@ -217,10 +222,14 @@ export class Statistics {
 			for (let i = 0; i < data.length; ++i) {
 				let row = data[i];
 
-				let pdi: StatInfo =
+				cmd = `SELECT COUNT(adventurer) AS c FROM alerts WHERE type = 1 AND adventurer='${row.adventurer}'`;
+				let data2 = await connection.all(cmd);
+
+				let pdi: TopDeathsStatInfo =
 				{
 					name: row.adventurer,
-					count: row.c
+					count: row.c,
+					raises: data2[0].c
 				};
 
 				result.players.push(pdi);
