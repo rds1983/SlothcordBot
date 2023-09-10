@@ -496,7 +496,7 @@ export class Statistics {
 						leadTimeInSeconds = 30 * 60;
 					}
 
-					let score = leadTimeInSeconds * row.size;
+					let score = leadTimeInSeconds * row.size * row.size;
 					leaderInfo.score += score;
 				}
 			}
