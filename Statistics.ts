@@ -496,14 +496,10 @@ export class Statistics {
 						leadTimeInSeconds = 30 * 60;
 					}
 
-					let score = leadTimeInSeconds * row.size * row.size;
+					let score = Math.round((leadTimeInSeconds * (row.size - 2) * (row.size - 2)) / 1000);
 					leaderInfo.score += score;
 				}
 			}
-
-			// HACK: Remove 'Whatta' and 'Unmace'
-			delete stats["Whatta"];
-			delete stats["Unmace"];
 
 			// Sort by score
 			var sortableArray = Object.entries(stats);

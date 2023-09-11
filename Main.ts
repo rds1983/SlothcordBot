@@ -38,7 +38,7 @@ class Main {
 		for (let i = 0; i < topDeaths.players.length && i < this.RatingMaximum; ++i) {
 			let pd = topDeaths.players[i];
 			let raiseRate = Math.round(pd.raises * 100.0 / pd.count);
-			message += `${i + 1}. ${pd.name} died ${pd.count} times. Was raised ${pd.raises} times. Raise rate is ${raiseRate}%.\n`;
+			message += `${i + 1}. ${pd.name} died ${pd.count} times. Was raised ${pd.raises} times (${raiseRate}%).\n`;
 		}
 
 		this.logInfo(message);
