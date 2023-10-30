@@ -8,6 +8,7 @@ class Group {
 	leader: string;
 	initialLeader: string;
 	name: string;
+	continent: string;
 	adventurers: string[];
 	started: number;
 }
@@ -78,7 +79,7 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 			// Check if it's group header row
 			let td = children[0];
 			if ("colSpan" in td && td.colSpan == "3") {
-				let re = /(\w+) is leading '(.*)' /;
+				let re = /(\w+) is leading '(.*)' on (.*):/;
 				let m = re.exec(td.textContent);
 				if (m) {
 					// Store last group
@@ -88,12 +89,14 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 
 					let name = m[2];
 					let leader = m[1];
+					let continent = m[3];
 
 					group =
 					{
 						initialLeader: leader,
 						leader: leader,
 						name: name,
+						continent: continent,
 						adventurers: [],
 						started: null
 					};
@@ -118,6 +121,19 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 			newGroups[group.leader] = group;
 		}
 
+		// Remove groups with less than 3 adventurers
+		let toDelete: string[] = [];
+		for (let leader in newGroups) {
+			if (newGroups[leader].adventurers.length < 3) {
+				toDelete.push(leader);
+			}
+		}
+
+		for (let i = 0; i < toDelete.length; ++i) {
+			let leader = toDelete[i];
+			delete newGroups[leader];
+		}
+
 		try {
 			if (this.status != null) {
 				// Update initial leaders
@@ -137,8 +153,8 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 				let leaderChanges: { [leader: string]: string } = {};
 				for (let oldLeader in this.status) {
 					let oldGroup = this.status[oldLeader];
-					if (!(oldLeader in newGroups)) {
 
+					if (!(oldLeader in newGroups)) {
 						// Check for the leader change
 						let changedLeader = false;
 						for (let newLeader in newGroups) {
@@ -169,7 +185,7 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 								leaderChanges[oldLeader] = newLeader;
 								await this.appendMessage(oldGroup.initialLeader, `The new leader is ${newLeader}.`, oldGroup.started);
 								await Statistics.storeGroupEnded(oldLeader);
-								await Statistics.storeGroupStarted(newLeader, newGroup.adventurers.length);
+								await Statistics.storeGroupStarted(newLeader, newGroup.continent, newGroup.adventurers.length);
 								break;
 							}
 						}
@@ -194,14 +210,20 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 					let newGroup = newGroups[newLeader];
 					if (!(newLeader in this.status)) {
 						newGroup.started = new Date().getTime();
-						await this.sendMessage(`${newLeader} has started group '${newGroup.name}'. Group consists of ${newGroup.adventurers.length} adventurers.`)
-						await Statistics.storeGroupStarted(newLeader, newGroup.adventurers.length);
+						await this.sendMessage(`${newLeader} has started group '${newGroup.name}' at ${newGroup.continent}. Group consists of ${newGroup.adventurers.length} adventurers.`)
+						await Statistics.storeGroupStarted(newLeader, newGroup.continent, newGroup.adventurers.length);
 					} else {
 						let oldGroup = this.status[newLeader];
 
 						// Ignore group name changes caused by the leader change
 						if (oldGroup.name != newGroup.name && !Object.values(leaderChanges).includes(newLeader)) {
 							await this.appendMessage(oldGroup.initialLeader, `${newLeader} has changed group name to '${newGroup.name}'`, oldGroup.started);
+						}
+
+						if (oldGroup.continent != newGroup.continent) {
+							await this.appendMessage(oldGroup.initialLeader, `Group has moved to ${newGroup.continent}.`, oldGroup.started);
+							await Statistics.storeGroupEnded(newLeader);
+							await Statistics.storeGroupStarted(newLeader, newGroup.continent, newGroup.adventurers.length);
 						}
 
 						let oldSizeDivided = Math.floor(oldGroup.adventurers.length / 4);
@@ -217,7 +239,7 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 
 						if (oldGroup.adventurers.length != newGroup.adventurers.length) {
 							await Statistics.storeGroupEnded(newLeader);
-							await Statistics.storeGroupStarted(newLeader, newGroup.adventurers.length);
+							await Statistics.storeGroupStarted(newLeader, newGroup.continent, newGroup.adventurers.length);
 						}
 					}
 				}

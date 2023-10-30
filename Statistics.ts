@@ -142,7 +142,7 @@ export class Statistics {
 		}
 	}
 
-	public static async storeGroupStarted(leader: string, size: number): Promise<void> {
+	public static async storeGroupStarted(leader: string, continent: string, size: number): Promise<void> {
 		let connection: Database = null;
 		try {
 			let timeStamp = Utility.getUnixTimeStamp();
@@ -152,8 +152,8 @@ export class Statistics {
 			await this.storeGroupEndedInternal(connection, leader, timeStamp);
 
 			// Start new one
-			let cmd = `INSERT INTO groups(leader, size, started, finished) VALUES(?, ?, ?, ?)`;
-			await connection.run(cmd, [leader, size, timeStamp, 0]);
+			let cmd = `INSERT INTO groups(leader, continent, size, started, finished) VALUES(?, ?, ?, ?, ?)`;
+			await connection.run(cmd, [leader, continent, size, timeStamp, 0]);
 
 			this.logInfo(`${leader} started group with size ${size} at ${timeStamp}`);
 		}
