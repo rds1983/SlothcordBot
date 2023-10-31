@@ -15,12 +15,19 @@ Global.usersToCharacters = require('./usersToCharacters.json');
 
 let s = Global.usersToCharacters;
 
-class Main {
+export class Main {
 	private readonly RatingMaximum: number = 10;
 
 	private readonly loggerWrapper: LoggerWrapper = new LoggerWrapper("main");
-	private processors: BaseProcessor[] = [];
+
+	public groupsProcessor: GroupsProcessor;
+	public epicsProcessor: EpicsProcessor;
+	public emporiumProcessor: EmporiumProcessor;
+	public forumProcessor: ForumProcessor;
+	public alertsProcessor: AlertsProcessor;
 	private client: Client;
+
+	public static instance: Main;
 
 	logError(message: any): void {
 		this.loggerWrapper.logError(message);
@@ -238,16 +245,6 @@ class Main {
 					}
 				}
 			}
-
-			/*				if (command == "epics") {
-								var result = "";
-								for (var i = 0; i < statusEpics.length; ++i) {
-									var epic = statusEpics[i];
-									result += `${i + 1}. ${epic.name} in ${epic.area} at ${epic.continent}\n`;
-								}
-			
-								sendMessage(msg.channel, result);
-							}*/
 		}
 		catch (err) {
 			this.logInfo(err);
@@ -266,15 +263,17 @@ class Main {
 		});
 
 		this.client.on("ready", () => {
-			this.processors.push(new GroupsProcessor(this.client));
-			this.processors.push(new EpicsProcessor(this.client));
-			this.processors.push(new EmporiumProcessor(this.client));
-			this.processors.push(new ForumProcessor(this.client));
-			this.processors.push(new AlertsProcessor(this.client));
+			this.groupsProcessor = new GroupsProcessor(this.client);
+			this.epicsProcessor = new EpicsProcessor(this.client);
+			this.emporiumProcessor = new EmporiumProcessor(this.client);
+			this.forumProcessor = new ForumProcessor(this.client);
+			this.alertsProcessor = new AlertsProcessor(this.client);
 
-			for (let i = 0; i < this.processors.length; ++i) {
-				this.processors[i].start();
-			}
+			this.groupsProcessor.start();
+			this.epicsProcessor.start();
+			this.emporiumProcessor.start();
+			this.forumProcessor.start();
+			this.alertsProcessor.start();
 		});
 
 		this.client.on('messageCreate', msg => this.processMessage(msg));
@@ -283,5 +282,5 @@ class Main {
 	}
 };
 
-let main: Main = new Main();
-main.start();
+Main.instance = new Main();
+Main.instance.start();

@@ -1,6 +1,8 @@
 import { Client } from "discord.js";
 import { JSDOM } from "jsdom";
 import { BaseProcessorImpl } from "./BaseProcessor";
+import { Statistics } from "./Statistics";
+import { Main } from "./Main";
 
 class Epic {
 	name: string;
@@ -99,6 +101,10 @@ export class EpicsProcessor extends BaseProcessorImpl<Epic[]>
 					}
 
 					if (!found) {
+						let currentGroup = await Statistics.getCurrentGroupInfo();
+						if (currentGroup != null) {
+							Main.instance.groupsProcessor.reportEpicKilled(currentGroup, oldEpic.name);
+						}
 						changed = true;
 					}
 				}

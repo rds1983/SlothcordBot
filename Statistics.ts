@@ -55,6 +55,11 @@ export class BestLeadersInfo extends BaseInfo {
 	public leaders: LeaderInfo[];
 }
 
+export class GroupInfo {
+	public id: number;
+	public leader: string;
+}
+
 class RealGroup {
 	public rows: any[] = [];
 	public finished: number;
@@ -167,6 +172,40 @@ export class Statistics {
 		}
 	}
 
+	public static async getCurrentGroupInfo(): Promise<GroupInfo> {
+		let connection: Database = null;
+		try {
+			// End existing group
+			connection = await this.openDb();
+
+			let cmd = `SELECT *, MAX(id) as maxId FROM groups`;
+			let result = await connection.get(cmd);
+			if (result === undefined) {
+				return null;
+			}
+
+			if (result.finished != 0) {
+				return null;
+			}
+
+			let groupInfo: GroupInfo =
+			{
+				id: result.id,
+				leader: result.leader
+			};
+
+			return groupInfo;
+		}
+		catch (err) {
+			this.logError(err);
+		}
+		finally {
+			if (connection != null) {
+				await connection.close();
+			}
+		}
+	}
+
 	public static async storeSale(seller: string, item: string, price: number): Promise<void> {
 		let connection: Database = null;
 		try {
@@ -188,6 +227,29 @@ export class Statistics {
 				await connection.close();
 			}
 		}
+	}
+
+	public static async storeEpicKill(epic: string, groupId: number): Promise<void> {
+		let connection: Database = null;
+		try {
+			connection = await this.openDb();
+
+			let timeStamp = Utility.getUnixTimeStamp();
+
+			// Start new one
+			let cmd = `INSERT INTO epic_kills(epic, groupId) VALUES(?, ?)`;
+			await connection.run(cmd, epic, groupId);
+
+			this.logInfo(`Group with id ${groupId} defeated epic ${epic}`);
+		}
+		catch (err) {
+			this.logError(err);
+		}
+		finally {
+			if (connection != null) {
+				await connection.close();
+			}
+		}		
 	}
 
 	private static async fetchStartEndFromAlerts(connection: Database): Promise<[number, number]> {

@@ -2,7 +2,7 @@ import { Client, EmbedBuilder } from "discord.js";
 import { BaseProcessorImpl } from "./BaseProcessor";
 import { Utility } from "./Utility";
 import { JSDOM } from 'jsdom';
-import { Statistics } from "./Statistics";
+import { GroupInfo, Statistics } from "./Statistics";
 
 class Group {
 	leader: string;
@@ -255,6 +255,21 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 
 		this.status = newGroups;
 		this.saveStatus();
+	}
+
+	public async reportEpicKilled(groupInfo: GroupInfo, epic: string): Promise<void> {
+		if (this.status == null || !(groupInfo.leader in this.status)) {
+			this.logInfo(`Epic kill reporting failed. Couldn't find group led by ${groupInfo.leader}. Current groups:`);
+			for (let leader in this.status) {
+				let group = this.status[leader];
+				this.logInfo(Utility.toString(group));
+			}
+			return;
+		}
+
+		let group = this.status[groupInfo.leader];
+		await this.appendMessage(group.initialLeader, `The group has defeated ${epic}.`, group.started);
+		await Statistics.storeEpicKill(epic, groupInfo.id);
 	}
 
 	process(onFinished: () => void): void {
