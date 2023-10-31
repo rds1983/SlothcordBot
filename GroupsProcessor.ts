@@ -269,7 +269,6 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 
 		let group = this.status[groupInfo.leader];
 		await this.appendMessage(group.initialLeader, `The group has defeated ${epic}.`, group.started);
-		await Statistics.storeEpicKill(epic, groupInfo.id);
 	}
 
 	process(onFinished: () => void): void {

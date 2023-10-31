@@ -237,10 +237,12 @@ export class Statistics {
 			let timeStamp = Utility.getUnixTimeStamp();
 
 			// Start new one
-			let cmd = `INSERT INTO epic_kills(epic, groupId) VALUES(?, ?)`;
-			await connection.run(cmd, epic, groupId);
+			let cmd = `INSERT INTO epic_kills(epic, groupId, timeStamp) VALUES(?, ?, ?)`;
+			await connection.run(cmd, epic, groupId, timeStamp);
 
-			this.logInfo(`Group with id ${groupId} defeated epic ${epic}`);
+			if (groupId != null) {
+				this.logInfo(`Group with id ${groupId} defeated epic ${epic}`);
+			}
 		}
 		catch (err) {
 			this.logError(err);
