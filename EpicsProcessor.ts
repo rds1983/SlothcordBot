@@ -101,9 +101,10 @@ export class EpicsProcessor extends BaseProcessorImpl<Epic[]>
 					}
 
 					if (!found) {
+						this.logInfo(`${oldEpic.name} was slain`);
 						let currentGroup = await Statistics.getCurrentGroupInfo();
 						if (currentGroup != null) {
-							Main.instance.groupsProcessor.reportEpicKilled(currentGroup, oldEpic.name);
+							await Main.instance.groupsProcessor.reportEpicKilled(currentGroup, oldEpic.name);
 						}
 						changed = true;
 					}
