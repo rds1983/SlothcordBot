@@ -221,7 +221,7 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 						}
 
 						if (oldGroup.continent != newGroup.continent) {
-							await this.appendMessage(oldGroup.initialLeader, `Group has moved to ${newGroup.continent}.`, oldGroup.started);
+							await this.appendMessage(oldGroup.initialLeader, `The group has moved to ${newGroup.continent}.`, oldGroup.started);
 						}
 
 						let oldSizeDivided = Math.floor(oldGroup.adventurers.length / 4);
