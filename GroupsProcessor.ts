@@ -222,8 +222,6 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 
 						if (oldGroup.continent != newGroup.continent) {
 							await this.appendMessage(oldGroup.initialLeader, `Group has moved to ${newGroup.continent}.`, oldGroup.started);
-							await Statistics.storeGroupEnded(newLeader);
-							await Statistics.storeGroupStarted(newLeader, newGroup.continent, newGroup.adventurers.length);
 						}
 
 						let oldSizeDivided = Math.floor(oldGroup.adventurers.length / 4);
@@ -237,7 +235,7 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 							await this.appendMessage(oldGroup.initialLeader, `The group has became smaller. Now it has only ${newGroup.adventurers.length} adventurers.`, oldGroup.started);
 						}
 
-						if (oldGroup.adventurers.length != newGroup.adventurers.length) {
+						if (oldGroup.adventurers.length != newGroup.adventurers.length || oldGroup.continent != newGroup.continent) {
 							await Statistics.storeGroupEnded(newLeader);
 							await Statistics.storeGroupStarted(newLeader, newGroup.continent, newGroup.adventurers.length);
 						}
