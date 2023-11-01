@@ -30,7 +30,7 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 		this.logInfo(`appendAndReportMessage for the group of ${leader}: ${append}`);
 
 		// Find the group message
-		let groupMessage = await this.findMessage(`${leader} has started`);
+		let groupMessage = await this.findMessage(`${leader} started`);
 
 		if (groupMessage == null) {
 			this.logInfo(`WARNING: could not find message for group of ${leader}`);
