@@ -270,10 +270,14 @@ export class Main {
 			this.alertsProcessor = new AlertsProcessor(this.client);
 
 			this.groupsProcessor.start();
-			this.epicsProcessor.start();
 			this.emporiumProcessor.start();
 			this.forumProcessor.start();
 			this.alertsProcessor.start();
+
+			// Postpone the start epics processing, so epics kill reporting wont mix with group reporting
+			setTimeout(() => {
+				this.epicsProcessor.start();	
+			}, 10000);
 		});
 
 		this.client.on('messageCreate', msg => this.processMessage(msg));
