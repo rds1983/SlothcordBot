@@ -183,7 +183,7 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 								newGroup.initialLeader = oldGroup.initialLeader;
 								newGroup.started = oldGroup.started;
 								leaderChanges[oldLeader] = newLeader;
-								await this.appendMessage(oldGroup.initialLeader, `The new leader is ${newLeader}.`, oldGroup.started);
+								await this.appendMessage(oldGroup.initialLeader, `${newLeader} became the new leader.`, oldGroup.started);
 								await Statistics.storeGroupEnded(oldLeader);
 								await Statistics.storeGroupStarted(newLeader, newGroup.continent, newGroup.adventurers.length);
 								break;
@@ -191,7 +191,7 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 						}
 
 						if (!changedLeader) {
-							await this.appendMessage(oldGroup.initialLeader, `The group is over.`, oldGroup.started);
+							await this.appendMessage(oldGroup.initialLeader, `The group was over.`, oldGroup.started);
 							await Statistics.storeGroupEnded(oldLeader);
 						}
 					}
@@ -210,29 +210,29 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 					let newGroup = newGroups[newLeader];
 					if (!(newLeader in this.status)) {
 						newGroup.started = new Date().getTime();
-						await this.sendMessage(`${newLeader} has started group '${newGroup.name}' at ${newGroup.continent}. Group consists of ${newGroup.adventurers.length} adventurers.`)
+						await this.sendMessage(`${newLeader} started group '${newGroup.name}' at ${newGroup.continent}. Group consisted of ${newGroup.adventurers.length} adventurers.`)
 						await Statistics.storeGroupStarted(newLeader, newGroup.continent, newGroup.adventurers.length);
 					} else {
 						let oldGroup = this.status[newLeader];
 
 						// Ignore group name changes caused by the leader change
 						if (oldGroup.name != newGroup.name && !Object.values(leaderChanges).includes(newLeader)) {
-							await this.appendMessage(oldGroup.initialLeader, `${newLeader} has changed group name to '${newGroup.name}'`, oldGroup.started);
+							await this.appendMessage(oldGroup.initialLeader, `${newLeader} changed group name to '${newGroup.name}'`, oldGroup.started);
 						}
 
 						if (oldGroup.continent != newGroup.continent) {
-							await this.appendMessage(oldGroup.initialLeader, `The group has moved to ${newGroup.continent}.`, oldGroup.started);
+							await this.appendMessage(oldGroup.initialLeader, `Moved to ${newGroup.continent}.`, oldGroup.started);
 						}
 
 						let oldSizeDivided = Math.floor(oldGroup.adventurers.length / 4);
 						let newSizeDivided = Math.floor(newGroup.adventurers.length / 4);
 
 						if (newSizeDivided > oldSizeDivided) {
-							await this.appendMessage(oldGroup.initialLeader, `The group has became bigger. Now it has as many as ${newGroup.adventurers.length} adventurers.`, oldGroup.started);
+							await this.appendMessage(oldGroup.initialLeader, `The group became bigger. Now it has as many as ${newGroup.adventurers.length} adventurers.`, oldGroup.started);
 						}
 
 						if (newSizeDivided < oldSizeDivided) {
-							await this.appendMessage(oldGroup.initialLeader, `The group has became smaller. Now it has only ${newGroup.adventurers.length} adventurers.`, oldGroup.started);
+							await this.appendMessage(oldGroup.initialLeader, `The group became smaller. Now it has only ${newGroup.adventurers.length} adventurers.`, oldGroup.started);
 						}
 
 						if (oldGroup.adventurers.length != newGroup.adventurers.length || oldGroup.continent != newGroup.continent) {
@@ -268,7 +268,7 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 		}
 
 		let group = this.status[groupInfo.leader];
-		await this.appendMessage(group.initialLeader, `The group has defeated ${epic}.`, group.started);
+		await this.appendMessage(group.initialLeader, `Defeated ${epic}.`, group.started);
 	}
 
 	process(onFinished: () => void): void {
