@@ -277,7 +277,7 @@ export class Main {
 			// Postpone the start epics processing, so epics kill reporting wont mix with group reporting
 			setTimeout(() => {
 				this.epicsProcessor.start();	
-			}, 10000);
+			}, 20000);
 		});
 
 		this.client.on('messageCreate', msg => this.processMessage(msg));
