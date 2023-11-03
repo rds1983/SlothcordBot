@@ -63,7 +63,8 @@ export class Main {
 
 		for (let i = 0; i < mostDeadly.deadlies.length && i < this.RatingMaximum; ++i) {
 			let d = mostDeadly.deadlies[i];
-			message += `${i + 1}. ${d.name} killed ${d.count} times.\n`;
+			let raiseRate = Math.round(d.raises * 100.0 / d.count);
+			message += `${i + 1}. ${d.name} killed ${d.count} times. Raised ${d.raises} times (${raiseRate}%).\n`;
 		}
 
 		this.logInfo(message);

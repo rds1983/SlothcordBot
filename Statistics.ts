@@ -2,6 +2,7 @@ import sqlite3 from 'sqlite3';
 import { Database, open } from 'sqlite';
 import { Utility } from "./Utility";
 import { LoggerWrapper } from "./LoggerWrapper";
+import { count } from 'console';
 
 enum EventType {
 	Death,
@@ -28,6 +29,10 @@ export class TopDeathsInfo extends BaseInfo {
 }
 
 export class MostDeadlyInfo extends BaseInfo {
+	public deadlies: TopDeathsStatInfo[];
+}
+
+export class MostDeadlyInfo2 extends BaseInfo {
 	public deadlies: StatInfo[];
 }
 
@@ -251,7 +256,7 @@ export class Statistics {
 			if (connection != null) {
 				await connection.close();
 			}
-		}		
+		}
 	}
 
 	private static async fetchStartEndFromAlerts(connection: Database): Promise<[number, number]> {
@@ -323,19 +328,68 @@ export class Statistics {
 				deadlies: []
 			};
 
-			let cmd = `SELECT doer, COUNT(doer) AS c FROM alerts WHERE type = 0 GROUP BY doer ORDER BY c DESC`;
+			let deathData: { [adventurer: string]: [number, string] } = {};
+			let statData: { [mob: string]: TopDeathsStatInfo } = {};
+			let cmd = `SELECT * FROM alerts ORDER BY timeStamp`;
 			let data = await connection.all(cmd);
 			for (let i = 0; i < data.length; ++i) {
 				let row = data[i];
 
-				let ki: StatInfo =
-				{
-					name: row.doer,
-					count: row.c
-				};
+				// Remove old death data
+				let toDelete: string[] = [];
+				for (let adventurer in deathData) {
+					if (row.timeStamp - deathData[adventurer][0] > 5 * 60) {
+						toDelete.push(adventurer);
+					}
+				}
 
-				result.deadlies.push(ki);
+				for (let i = 0; i < toDelete.length; ++i) {
+					delete deathData[toDelete[i]];
+				}
+
+				if (row.type == 0) {
+					// kill
+					if (!(row.doer in statData)) {
+						statData[row.doer] =
+						{
+							name: row.doer,
+							count: 0,
+							raises: 0
+						};
+					}
+
+					deathData[row.adventurer] = [row.timeStamp, row.doer];
+					++statData[row.doer].count;
+				} else if (row.type == 1) {
+					// raise
+					if (row.adventurer in deathData) {
+						let doer = deathData[row.adventurer][1];
+						if (!(doer in statData)) {
+							statData[doer] =
+							{
+								name: doer,
+								count: 0,
+								raises: 0
+							};
+						}
+
+						++statData[doer].raises;
+
+						delete deathData[row.adventurer];
+					}
+				}
 			}
+
+			// Set result
+			for (let mob in statData) {
+				result.deadlies.push(statData[mob]);
+			}
+
+			// Sort by kills count
+			result.deadlies.sort((a, b) => {
+				return b.count - a.count;
+			});
+
 
 			return result;
 		}
@@ -346,7 +400,7 @@ export class Statistics {
 		}
 	}
 
-	public static async fetchMostDeadlyFor(character: string): Promise<MostDeadlyInfo> {
+	public static async fetchMostDeadlyFor(character: string): Promise<MostDeadlyInfo2> {
 		let connection: Database = null;
 
 		try {
@@ -354,7 +408,7 @@ export class Statistics {
 
 			let [start, end] = await this.fetchStartEndFromAlerts(connection);
 
-			let result: MostDeadlyInfo =
+			let result: MostDeadlyInfo2 =
 			{
 				start: start,
 				end: end,
