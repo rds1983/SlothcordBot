@@ -2,7 +2,6 @@ import sqlite3 from 'sqlite3';
 import { Database, open } from 'sqlite';
 import { Utility } from "./Utility";
 import { LoggerWrapper } from "./LoggerWrapper";
-import { count } from 'console';
 
 enum EventType {
 	Death,
@@ -532,7 +531,7 @@ export class Statistics {
 			connection = await this.openDb();
 
 			// Fetch all data
-			let cmd = `SELECT leader, size, started, finished FROM groups ORDER BY id`;
+			let cmd = `SELECT leader, size, started, finished FROM groups WHERE size > 2 ORDER BY id`;
 			let data = await connection.all(cmd);
 
 			// First run: group all data by real groups
@@ -614,7 +613,7 @@ export class Statistics {
 						leadTimeInSeconds = 30 * 60;
 					}
 
-					let score = Math.round((Math.sqrt(leadTimeInSeconds) * (row.size - 2)));
+					let score = Math.round(Math.sqrt(leadTimeInSeconds) * row.size);
 					leaderInfo.score += score;
 				}
 			}
