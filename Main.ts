@@ -274,11 +274,7 @@ export class Main {
 			this.emporiumProcessor.start();
 			this.forumProcessor.start();
 			this.alertsProcessor.start();
-
-			// Postpone the start epics processing, so epics kill reporting wont mix with group reporting
-			setTimeout(() => {
-				this.epicsProcessor.start();	
-			}, 20000);
+			this.epicsProcessor.start();
 		});
 
 		this.client.on('messageCreate', msg => this.processMessage(msg));
