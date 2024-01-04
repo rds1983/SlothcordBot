@@ -73,6 +73,28 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 		await this.makeChannelWhite();
 	}
 
+	async processDefeatedEpics(): Promise<void> {
+		for (let i = 0; i < this.defeatedEpics.length; ++i) {
+			let defeatedEpic = this.defeatedEpics[i];
+			let leader = defeatedEpic.leader;
+
+			if (this.status == null || !(leader in this.status)) {
+				this.logInfo(`Epic kill reporting failed. Couldn't find group led by ${leader}. Current groups:`);
+				for (let leader in this.status) {
+					let group = this.status[leader];
+					this.logInfo(Utility.toString(group));
+				}
+
+				continue;
+			}
+
+			let group = this.status[leader];
+			await this.appendMessage(group.initialLeader, `Defeated ${defeatedEpic.epic}.`, group.started);
+		}
+
+		this.defeatedEpics = [];
+	}
+
 
 	async internalProcess(): Promise<void> {
 		let data = await this.loadPage("http://www.slothmud.org/wp/live-info/adventuring-parties");
@@ -146,27 +168,7 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 		try {
 			if (this.status != null) {
 				// Update defeated epics
-				this.epicsLock.acquire('key', async () => {
-					for (let i = 0; i < this.defeatedEpics.length; ++i) {
-						let defeatedEpic = this.defeatedEpics[i];
-						let leader = defeatedEpic.leader;
-
-						if (this.status == null || !(leader in this.status)) {
-							this.logInfo(`Epic kill reporting failed. Couldn't find group led by ${leader}. Current groups:`);
-							for (let leader in this.status) {
-								let group = this.status[leader];
-								this.logInfo(Utility.toString(group));
-							}
-
-							continue;
-						}
-
-						let group = this.status[leader];
-						await this.appendMessage(group.initialLeader, `Defeated ${defeatedEpic.epic}.`, group.started);
-					}
-
-					this.defeatedEpics = [];
-				});
+				await this.epicsLock.acquire('key', this.processDefeatedEpics);
 
 				// Update initial leaders
 				for (let leader in newGroups) {
