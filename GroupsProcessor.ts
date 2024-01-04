@@ -3,6 +3,7 @@ import { BaseProcessorImpl } from "./BaseProcessor";
 import { Utility } from "./Utility";
 import { JSDOM } from 'jsdom';
 import { GroupInfo, Statistics } from "./Statistics";
+import AsyncLock from "async-lock";
 
 class Group {
 	leader: string;
@@ -13,7 +14,15 @@ class Group {
 	started: number;
 }
 
+class DefeatedEpic {
+	leader: string;
+	epic: string;
+}
+
 export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group }> {
+	private readonly epicsLock: AsyncLock = new AsyncLock();
+	private defeatedEpics: DefeatedEpic[] = [];
+
 	constructor(client: Client) {
 		super(client);
 	}
@@ -136,6 +145,29 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 
 		try {
 			if (this.status != null) {
+				// Update defeated epics
+				this.epicsLock.acquire('key', async () => {
+					for (let i = 0; i < this.defeatedEpics.length; ++i) {
+						let defeatedEpic = this.defeatedEpics[i];
+						let leader = defeatedEpic.leader;
+
+						if (this.status == null || !(leader in this.status)) {
+							this.logInfo(`Epic kill reporting failed. Couldn't find group led by ${leader}. Current groups:`);
+							for (let leader in this.status) {
+								let group = this.status[leader];
+								this.logInfo(Utility.toString(group));
+							}
+
+							continue;
+						}
+
+						let group = this.status[leader];
+						await this.appendMessage(group.initialLeader, `Defeated ${defeatedEpic.epic}.`, group.started);
+					}
+				});
+
+				this.defeatedEpics = [];
+
 				// Update initial leaders
 				for (let leader in newGroups) {
 					let newGroup = newGroups[leader];
@@ -257,18 +289,15 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 		this.saveStatus();
 	}
 
-	public async reportEpicKilled(groupInfo: GroupInfo, epic: string): Promise<void> {
-		if (this.status == null || !(groupInfo.leader in this.status)) {
-			this.logInfo(`Epic kill reporting failed. Couldn't find group led by ${groupInfo.leader}. Current groups:`);
-			for (let leader in this.status) {
-				let group = this.status[leader];
-				this.logInfo(Utility.toString(group));
-			}
-			return;
-		}
+	public reportEpicKilled(groupInfo: GroupInfo, epic: string) {
+		this.epicsLock.acquire('key', () => {
+			let defeatedEpic: DefeatedEpic = {
+				leader: groupInfo.leader,
+				epic: epic
+			};
 
-		let group = this.status[groupInfo.leader];
-		await this.appendMessage(group.initialLeader, `Defeated ${epic}.`, group.started);
+			this.defeatedEpics.push(defeatedEpic);
+		});
 	}
 
 	process(onFinished: () => void): void {
