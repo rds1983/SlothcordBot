@@ -164,9 +164,9 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 						let group = this.status[leader];
 						await this.appendMessage(group.initialLeader, `Defeated ${defeatedEpic.epic}.`, group.started);
 					}
-				});
 
-				this.defeatedEpics = [];
+					this.defeatedEpics = [];
+				});
 
 				// Update initial leaders
 				for (let leader in newGroups) {
