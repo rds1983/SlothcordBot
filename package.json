@@ -9,8 +9,6 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@types/async-lock": "^1.4.2",
-    "async-lock": "^1.4.1",
     "discord.js": "14.10.2",
     "jsdom": "21.1.1",
     "moment": "2.29.4",

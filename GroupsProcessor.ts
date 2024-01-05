@@ -3,7 +3,6 @@ import { BaseProcessorImpl } from "./BaseProcessor";
 import { Utility } from "./Utility";
 import { JSDOM } from 'jsdom';
 import { GroupInfo, Statistics } from "./Statistics";
-import AsyncLock from "async-lock";
 
 class Group {
 	leader: string;
@@ -21,7 +20,6 @@ class DefeatedEpic {
 }
 
 export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group }> {
-	private readonly epicsLock: AsyncLock = new AsyncLock();
 	private defeatedEpics: DefeatedEpic[] = [];
 
 	constructor(client: Client) {
@@ -73,29 +71,6 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 
 		await this.makeChannelWhite();
 	}
-
-	async processDefeatedEpics(): Promise<void> {
-		for (let i = 0; i < this.defeatedEpics.length; ++i) {
-			let defeatedEpic = this.defeatedEpics[i];
-			let leader = defeatedEpic.leader;
-
-			if (this.status == null || !(leader in this.status)) {
-				this.logInfo(`Epic kill reporting failed. Couldn't find group led by ${leader}. Current groups:`);
-				for (let leader in this.status) {
-					let group = this.status[leader];
-					this.logInfo(Utility.toString(group));
-				}
-
-				continue;
-			}
-
-			let group = this.status[leader];
-			await this.appendMessage(group.initialLeader, `Defeated ${defeatedEpic.epic}.`, group.started);
-		}
-
-		this.defeatedEpics = [];
-	}
-
 
 	async internalProcess(): Promise<void> {
 		let data = await this.loadPage("http://www.slothmud.org/wp/live-info/adventuring-parties");
@@ -170,7 +145,26 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 		try {
 			if (this.status != null) {
 				// Update defeated epics
-				await this.epicsLock.acquire('key', async () => await this.processDefeatedEpics());
+				let de = this.defeatedEpics;
+				this.defeatedEpics = [];
+
+				for (let i = 0; i < de.length; ++i) {
+					let defeatedEpic = de[i];
+					let leader = defeatedEpic.leader;
+
+					if (this.status == null || !(leader in this.status)) {
+						this.logInfo(`Epic kill reporting failed. Couldn't find group led by ${leader}. Current groups:`);
+						for (let leader in this.status) {
+							let group = this.status[leader];
+							this.logInfo(Utility.toString(group));
+						}
+
+						continue;
+					}
+
+					let group = this.status[leader];
+					await this.appendMessage(group.initialLeader, `Defeated ${defeatedEpic.epic}.`, group.started);
+				}
 
 				// Update initial leaders
 				for (let leader in newGroups) {
@@ -300,14 +294,12 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 	}
 
 	public reportEpicKilled(groupInfo: GroupInfo, epic: string) {
-		this.epicsLock.acquire('key', () => {
-			let defeatedEpic: DefeatedEpic = {
-				leader: groupInfo.leader,
-				epic: epic
-			};
+		let defeatedEpic: DefeatedEpic = {
+			leader: groupInfo.leader,
+			epic: epic
+		};
 
-			this.defeatedEpics.push(defeatedEpic);
-		});
+		this.defeatedEpics.push(defeatedEpic);
 	}
 
 	process(onFinished: () => void): void {
