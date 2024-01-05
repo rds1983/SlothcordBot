@@ -12,7 +12,7 @@ class Group {
 	continent: string;
 	adventurers: string[];
 	started: number;
-	chop: boolean;
+	movedToLyme: number;
 }
 
 class DefeatedEpic {
@@ -131,7 +131,7 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 						continent: continent,
 						adventurers: [],
 						started: null,
-						chop: false
+						movedToLyme: null
 					};
 
 					continue;
@@ -258,6 +258,12 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 
 						if (oldGroup.continent != newGroup.continent) {
 							await this.appendMessage(oldGroup.initialLeader, `Moved to ${newGroup.continent}.`, oldGroup.started);
+
+							if (newGroup.continent == "Lyme") {
+								newGroup.movedToLyme = Utility.getUnixTimeStamp();
+							} else {
+								newGroup.movedToLyme = null;
+							}
 						}
 
 						let oldSizeDivided = Math.floor(oldGroup.adventurers.length / 4);
