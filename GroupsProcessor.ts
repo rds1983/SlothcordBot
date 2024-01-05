@@ -12,6 +12,7 @@ class Group {
 	continent: string;
 	adventurers: string[];
 	started: number;
+	chop: boolean;
 }
 
 class DefeatedEpic {
