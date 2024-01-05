@@ -76,6 +76,7 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 		if (currentGroup != null) {
 			// If there's current group, then process epics first
 			// So defeated epics would be attributed to the current group
+			this.logInfo("There is current group. Processing epics first");
 			await Main.instance.epicsProcessor.internalProcess();
 		}
 
@@ -279,6 +280,7 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 		if (currentGroup == null) {
 			// If there wasn't current group, then process epics last
 			// So defeated epics would be attributed to the new group(if it was started)
+			this.logInfo("There isn't current group. Processing epics last");
 			await Main.instance.epicsProcessor.internalProcess();
 		}
 	}
