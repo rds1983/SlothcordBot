@@ -37,6 +37,14 @@ export class Utility {
 	}
 
 	static toString(obj: any) {
+		if (typeof obj == "string")
+		{
+			return obj;
+		} else if (obj instanceof Error)
+		{
+			return obj.message;
+		}
+
 		return JSON.stringify(obj);
 	}
 
