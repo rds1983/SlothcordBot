@@ -72,6 +72,13 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 	}
 
 	async internalProcess(): Promise<void> {
+		let currentGroup = await Statistics.getCurrentGroupInfo();
+		if (currentGroup != null) {
+			// If there's current group, then process epics first
+			// So defeated epics would be attributed to the current group
+			await Main.instance.epicsProcessor.internalProcess();
+		}
+
 		let data = await this.loadPage("http://www.slothmud.org/wp/live-info/adventuring-parties");
 		let dom = new JSDOM(data);
 		let document = dom.window.document;
@@ -269,7 +276,11 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 		this.status = newGroups;
 		this.saveStatus();
 
-		await Main.instance.epicsProcessor.internalProcess();
+		if (currentGroup == null) {
+			// If there wasn't current group, then process epics last
+			// So defeated epics would be attributed to the new group(if it was started)
+			await Main.instance.epicsProcessor.internalProcess();
+		}
 	}
 
 	public async reportEpicKilled(groupInfo: GroupInfo, epic: string): Promise<void> {
