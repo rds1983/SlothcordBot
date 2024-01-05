@@ -161,6 +161,8 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 						if ("started" in oldGroup) {
 							newGroup.started = oldGroup.started;
 						}
+
+						newGroup.movedToLyme = oldGroup.movedToLyme;
 					}
 				}
 
