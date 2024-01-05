@@ -12,12 +12,16 @@ export abstract class BaseProcessor {
 	private xhr: XMLHttpRequest;
 
 	constructor() {
-		this.loggerWrapper = new LoggerWrapper(this.getName());
+		this.loggerWrapper = new LoggerWrapper(this.getLoggerName());
 	}
 
 	abstract getName(): string;
 	abstract process(onFinished: () => void): void;
 	abstract runIntervalInMs(): number;
+
+	getLoggerName(): string {
+		return this.getName();
+	}
 
 	logError(message: any): void {
 		this.loggerWrapper.logError(message);

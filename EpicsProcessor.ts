@@ -20,6 +20,10 @@ export class EpicsProcessor extends BaseProcessorImpl<Epic[]>
 		return "epics";
 	}
 
+	override getLoggerName(): string {
+		return "groups-epics";
+	}
+
 	runIntervalInMs(): number {
 		return 5 * 60 * 1000;
 	}
@@ -104,7 +108,7 @@ export class EpicsProcessor extends BaseProcessorImpl<Epic[]>
 						let groupId: number = null;
 						let currentGroup = await Statistics.getCurrentGroupInfo();
 						if (currentGroup != null) {
-							Main.instance.groupsProcessor.reportEpicKilled(currentGroup, oldEpic.name);
+							await Main.instance.groupsProcessor.reportEpicKilled(currentGroup, oldEpic.name);
 							groupId = currentGroup.id;
 							this.logInfo(`${oldEpic.name} was slain by a group led by ${currentGroup.leader}`);
 						} else {

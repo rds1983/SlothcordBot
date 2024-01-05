@@ -270,11 +270,12 @@ export class Main {
 			this.forumProcessor = new ForumProcessor(this.client);
 			this.alertsProcessor = new AlertsProcessor(this.client);
 
-			this.groupsProcessor.start();
 			this.emporiumProcessor.start();
 			this.forumProcessor.start();
 			this.alertsProcessor.start();
-			this.epicsProcessor.start();
+			this.groupsProcessor.start();
+
+			// Don't start epics processor, since it would be run by groups processor
 		});
 
 		this.client.on('messageCreate', msg => this.processMessage(msg));

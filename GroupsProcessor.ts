@@ -3,6 +3,7 @@ import { BaseProcessorImpl } from "./BaseProcessor";
 import { Utility } from "./Utility";
 import { JSDOM } from 'jsdom';
 import { GroupInfo, Statistics } from "./Statistics";
+import { Main } from "./Main";
 
 class Group {
 	leader: string;
@@ -14,20 +15,18 @@ class Group {
 	movedToLyme: number;
 }
 
-class DefeatedEpic {
-	leader: string;
-	epic: string;
-}
 
 export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group }> {
-	private defeatedEpics: DefeatedEpic[] = [];
-
 	constructor(client: Client) {
 		super(client);
 	}
 
 	getName(): string {
 		return "groups";
+	}
+
+	override getLoggerName(): string {
+		return "groups-epics";
 	}
 
 	runIntervalInMs(): number {
@@ -144,28 +143,6 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 
 		try {
 			if (this.status != null) {
-				// Update defeated epics
-				let de = this.defeatedEpics;
-				this.defeatedEpics = [];
-
-				for (let i = 0; i < de.length; ++i) {
-					let defeatedEpic = de[i];
-					let leader = defeatedEpic.leader;
-
-					if (this.status == null || !(leader in this.status)) {
-						this.logInfo(`Epic kill reporting failed. Couldn't find group led by ${leader}. Current groups:`);
-						for (let leader in this.status) {
-							let group = this.status[leader];
-							this.logInfo(Utility.toString(group));
-						}
-
-						continue;
-					}
-
-					let group = this.status[leader];
-					await this.appendMessage(group.initialLeader, `Defeated ${defeatedEpic.epic}.`, group.started);
-				}
-
 				// Update initial leaders
 				for (let leader in newGroups) {
 					let newGroup = newGroups[leader];
@@ -291,15 +268,22 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 
 		this.status = newGroups;
 		this.saveStatus();
+
+		await Main.instance.epicsProcessor.internalProcess();
 	}
 
-	public reportEpicKilled(groupInfo: GroupInfo, epic: string) {
-		let defeatedEpic: DefeatedEpic = {
-			leader: groupInfo.leader,
-			epic: epic
-		};
+	public async reportEpicKilled(groupInfo: GroupInfo, epic: string): Promise<void> {
+		if (this.status == null || !(groupInfo.leader in this.status)) {
+			this.logInfo(`Epic kill reporting failed. Couldn't find group led by ${groupInfo.leader}. Current groups:`);
+			for (let leader in this.status) {
+				let group = this.status[leader];
+				this.logInfo(Utility.toString(group));
+			}
+			return;
+		}
 
-		this.defeatedEpics.push(defeatedEpic);
+		let group = this.status[groupInfo.leader];
+		await this.appendMessage(group.initialLeader, `Defeated ${epic}.`, group.started);
 	}
 
 	process(onFinished: () => void): void {
