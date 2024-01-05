@@ -130,7 +130,8 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 						name: name,
 						continent: continent,
 						adventurers: [],
-						started: null
+						started: null,
+						chop: false
 					};
 
 					continue;
