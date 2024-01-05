@@ -74,26 +74,26 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 		await this.makeChannelWhite();
 	}
 
-	async processDefeatedEpics(_this: GroupsProcessor): Promise<void> {
-		for (let i = 0; i < _this.defeatedEpics.length; ++i) {
-			let defeatedEpic = _this.defeatedEpics[i];
+	async processDefeatedEpics(): Promise<void> {
+		for (let i = 0; i < this.defeatedEpics.length; ++i) {
+			let defeatedEpic = this.defeatedEpics[i];
 			let leader = defeatedEpic.leader;
 
-			if (_this.status == null || !(leader in _this.status)) {
-				_this.logInfo(`Epic kill reporting failed. Couldn't find group led by ${leader}. Current groups:`);
-				for (let leader in _this.status) {
-					let group = _this.status[leader];
-					_this.logInfo(Utility.toString(group));
+			if (this.status == null || !(leader in this.status)) {
+				this.logInfo(`Epic kill reporting failed. Couldn't find group led by ${leader}. Current groups:`);
+				for (let leader in this.status) {
+					let group = this.status[leader];
+					this.logInfo(Utility.toString(group));
 				}
 
 				continue;
 			}
 
-			let group = _this.status[leader];
-			await _this.appendMessage(group.initialLeader, `Defeated ${defeatedEpic.epic}.`, group.started);
+			let group = this.status[leader];
+			await this.appendMessage(group.initialLeader, `Defeated ${defeatedEpic.epic}.`, group.started);
 		}
 
-		_this.defeatedEpics = [];
+		this.defeatedEpics = [];
 	}
 
 
@@ -170,7 +170,7 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 		try {
 			if (this.status != null) {
 				// Update defeated epics
-				await this.epicsLock.acquire('key', () => this.processDefeatedEpics(this));
+				await this.epicsLock.acquire('key', async () => await this.processDefeatedEpics());
 
 				// Update initial leaders
 				for (let leader in newGroups) {
