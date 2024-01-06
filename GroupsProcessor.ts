@@ -259,7 +259,7 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 							} else {
 								// If the group stays on Lyme for more than 30 minutes and there weren't defeated epics, then it is likely to be chop group
 								if (passed >= 30 * 60) {
-									await this.appendMessage(oldGroup.initialLeader, `The group was likely to become the chop group.`, oldGroup.started);
+									await this.appendMessage(oldGroup.initialLeader, `The group became chop.`, oldGroup.started);
 									newGroup.movedToLyme = null;
 								}
 							}
