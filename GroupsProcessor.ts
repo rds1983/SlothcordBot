@@ -204,7 +204,7 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 								newGroup.initialLeader = oldGroup.initialLeader;
 								newGroup.started = oldGroup.started;
 								leaderChanges[oldLeader] = newLeader;
-								await this.appendMessage(oldGroup.initialLeader, `${newLeader} became the new leader.`, oldGroup.started);
+								await this.appendMessage(oldGroup.initialLeader, `**${newLeader} became the new leader.**`, oldGroup.started);
 								await Statistics.storeGroupEnded(oldLeader);
 								await Statistics.storeGroupStarted(newLeader, newGroup.continent, newGroup.adventurers.length);
 								break;
