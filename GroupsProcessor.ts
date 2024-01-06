@@ -204,7 +204,7 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 								newGroup.initialLeader = oldGroup.initialLeader;
 								newGroup.started = oldGroup.started;
 								leaderChanges[oldLeader] = newLeader;
-								await this.appendMessage(oldGroup.initialLeader, `**${newLeader} became the new leader.**`, oldGroup.started);
+								await this.appendMessage(oldGroup.initialLeader, `**${newLeader} became the new leader of the group '${newGroup.name}'.**`, oldGroup.started);
 								await Statistics.storeGroupEnded(oldLeader);
 								await Statistics.storeGroupStarted(newLeader, newGroup.continent, newGroup.adventurers.length);
 								break;
@@ -238,7 +238,7 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 
 						// Ignore group name changes caused by the leader change
 						if (oldGroup.name != newGroup.name && !Object.values(leaderChanges).includes(newLeader)) {
-							await this.appendMessage(oldGroup.initialLeader, `${newLeader} changed group name to '${newGroup.name}'`, oldGroup.started);
+							await this.appendMessage(oldGroup.initialLeader, `**${newLeader} changed group name to '${newGroup.name}'.**`, oldGroup.started);
 						}
 
 						if (oldGroup.continent != newGroup.continent) {
