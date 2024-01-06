@@ -249,7 +249,7 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 							// If the group stays on Lyme for more than 30 minutes, then it is likely to be chop group
 							let passed = Utility.getUnixTimeStamp() - newGroup.movedToLyme;
 							if (passed >= 30 * 60) {
-								await this.appendMessage(oldGroup.initialLeader, `Chop-chop.`, oldGroup.started);
+								await this.appendMessage(oldGroup.initialLeader, `The group was likely to become the chop group.`, oldGroup.started);
 								newGroup.movedToLyme = null;
 							}
 						}
