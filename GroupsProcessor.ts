@@ -17,6 +17,8 @@ class Group {
 
 
 export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group }> {
+	private defeatedEpics: boolean;
+
 	constructor(client: Client) {
 		super(client);
 	}
@@ -72,6 +74,8 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 	}
 
 	async internalProcess(): Promise<void> {
+		this.defeatedEpics = false;
+
 		let currentGroup = await Statistics.getCurrentGroupInfo();
 		if (currentGroup != null) {
 			// If there's current group, then process epics first
@@ -246,11 +250,18 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 								newGroup.movedToLyme = null;
 							}
 						} else if (newGroup.continent == "Lyme" && newGroup.movedToLyme != null) {
-							// If the group stays on Lyme for more than 30 minutes, then it is likely to be chop group
 							let passed = Utility.getUnixTimeStamp() - newGroup.movedToLyme;
-							if (passed >= 30 * 60) {
-								await this.appendMessage(oldGroup.initialLeader, `The group was likely to become the chop group.`, oldGroup.started);
-								newGroup.movedToLyme = null;
+							this.logInfo(`${passed} seconds passed since the group moved to Lyme.`);
+							// If there were defeated epics, then reset the timer
+							if (this.defeatedEpics) {
+								newGroup.movedToLyme = Utility.getUnixTimeStamp();
+								this.logInfo(`There were defeated epics. Resetting the movedToLyme time.`);
+							} else {
+								// If the group stays on Lyme for more than 30 minutes and there weren't defeated epics, then it is likely to be chop group
+								if (passed >= 30 * 60) {
+									await this.appendMessage(oldGroup.initialLeader, `The group was likely to become the chop group.`, oldGroup.started);
+									newGroup.movedToLyme = null;
+								}
 							}
 						}
 
@@ -295,6 +306,7 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 	}
 
 	public async reportEpicKilled(groupInfo: GroupInfo, epic: string): Promise<void> {
+		this.defeatedEpics = true;
 		if (this.status == null || !(groupInfo.leader in this.status)) {
 			this.logInfo(`Epic kill reporting failed. Couldn't find group led by ${groupInfo.leader}. Current groups:`);
 			for (let leader in this.status) {
