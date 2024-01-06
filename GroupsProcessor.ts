@@ -245,6 +245,13 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 							} else {
 								newGroup.movedToLyme = null;
 							}
+						} else if (newGroup.continent == "Lyme" && newGroup.movedToLyme != null) {
+							// If the group stays on Lyme for more than 30 minutes, then it is likely to be chop group
+							let passed = Utility.getUnixTimeStamp() - newGroup.movedToLyme;
+							if (passed >= 30 * 60) {
+								await this.appendMessage(oldGroup.initialLeader, `Chop-chop.`, oldGroup.started);
+								newGroup.movedToLyme = null;
+							}
 						}
 
 						let oldSizeDivided = Math.floor(oldGroup.adventurers.length / 4);
