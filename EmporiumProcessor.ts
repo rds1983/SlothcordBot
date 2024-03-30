@@ -140,6 +140,12 @@ export class EmporiumProcessor extends BaseProcessorImpl<{ [seller: string]: Auc
 
 		this.logInfo(`Items count: ${count}`);
 
+		if (count == 0) {
+			// Workaround of buggy site behavior when it returns empty auction list sometimes
+			this.logInfo(`Ignoring emporium processing...`);
+			return;
+		}
+
 		try {
 			if (this.status != null) {
 				for (let seller in newAuctions) {
@@ -231,11 +237,8 @@ export class EmporiumProcessor extends BaseProcessorImpl<{ [seller: string]: Auc
 			this.logError(err);
 		}
 
-		if (Object.keys(newAuctions).length > 0) {
-			// Workaround of buggy site behavior when it returns empty auction list sometimes
-			this.status = newAuctions;
-			this.saveStatus();
-		}
+		this.status = newAuctions;
+		this.saveStatus();
 	}
 
 	process(onFinished: () => void): void {
