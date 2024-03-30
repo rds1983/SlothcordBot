@@ -5,7 +5,7 @@ import { EpicsProcessor } from "./EpicsProcessor";
 import { ForumProcessor } from "./ForumProcessor";
 import { Global } from "./Global";
 import { GroupsProcessor } from "./GroupsProcessor";
-import { Statistics } from "./Statistics";
+import { PeriodType, Statistics } from "./Statistics";
 import { LoggerWrapper } from "./LoggerWrapper";
 import { BaseProcessor } from "./BaseProcessor";
 import { Utility } from "./Utility";
@@ -37,8 +37,8 @@ export class Main {
 		this.loggerWrapper.logInfo(message);
 	}
 
-	async fetchTopDeathsAsync(channel: TextChannel): Promise<void> {
-		let topDeaths = await Statistics.fetchTopDeaths();
+	async fetchTopDeathsAsync(channel: TextChannel, period: PeriodType): Promise<void> {
+		let topDeaths = await Statistics.fetchTopDeaths(period);
 
 		let message = `Top deaths rating from ${Utility.formatOnlyDate(topDeaths.start)} to ${Utility.formatOnlyDate(topDeaths.end)}.\n\n`;
 
@@ -52,12 +52,12 @@ export class Main {
 		Utility.sendMessage(channel, message);
 	}
 
-	fetchTopDeaths(channel: TextChannel): void {
-		this.fetchTopDeathsAsync(channel).catch(err => this.logError(err));
+	fetchTopDeaths(channel: TextChannel, period: PeriodType): void {
+		this.fetchTopDeathsAsync(channel, period).catch(err => this.logError(err));
 	}
 
-	async fetchMostDeadlyAsync(channel: TextChannel): Promise<void> {
-		let mostDeadly = await Statistics.fetchMostDeadly();
+	async fetchMostDeadlyAsync(channel: TextChannel, period: PeriodType): Promise<void> {
+		let mostDeadly = await Statistics.fetchMostDeadly(period);
 
 		let message = `Most deadly rating from ${Utility.formatOnlyDate(mostDeadly.start)} to ${Utility.formatOnlyDate(mostDeadly.end)}.\n\n`;
 
@@ -71,8 +71,8 @@ export class Main {
 		Utility.sendMessage(channel, message);
 	}
 
-	fetchMostDeadly(channel: TextChannel): void {
-		this.fetchMostDeadlyAsync(channel).catch(err => this.logError(err));
+	fetchMostDeadly(channel: TextChannel, period: PeriodType): void {
+		this.fetchMostDeadlyAsync(channel, period).catch(err => this.logError(err));
 	}
 
 	async fetchMostDeadlyForAsync(channel: TextChannel, character: string): Promise<void> {
@@ -111,8 +111,8 @@ export class Main {
 		this.fetchStatForAsync(channel, character).catch(err => this.logError(err));
 	}
 
-	async fetchTopRaisersAsync(channel: TextChannel): Promise<void> {
-		let topRaisers = await Statistics.fetchTopRaisers();
+	async fetchTopRaisersAsync(channel: TextChannel, period: PeriodType): Promise<void> {
+		let topRaisers = await Statistics.fetchTopRaisers(period);
 
 		let message = `Top raisers rating from ${Utility.formatOnlyDate(topRaisers.start)} to ${Utility.formatOnlyDate(topRaisers.end)}.\n\n`;
 
@@ -125,8 +125,8 @@ export class Main {
 		Utility.sendMessage(channel, message);
 	}
 
-	fetchTopRaisers(channel: TextChannel): void {
-		this.fetchTopRaisersAsync(channel).catch(err => this.logError(err));
+	fetchTopRaisers(channel: TextChannel, period: PeriodType): void {
+		this.fetchTopRaisersAsync(channel, period).catch(err => this.logError(err));
 	}
 
 	async fetchBestLeadersAsync(channel: TextChannel): Promise<void> {
@@ -186,11 +186,28 @@ export class Main {
 	}
 
 	help(channel: TextChannel) {
-		let message = "I know following commands:\n!topdeaths\n!mostdeadly\n!topraisers\n!bestleaders\n!mostdeadlyfor player_name\n!statfor player_name";
+		let message = "I know following commands:\n!topdeaths [week|month|**year**|all]\n!mostdeadly [week|month|**year**|all]\n!topraisers [week|month|**year**|all]\n!bestleaders\n!mostdeadlyfor player_name\n!statfor player_name";
 
 		this.logInfo(message);
 		Utility.sendMessage(channel, message);
 	}
+
+	getPeriod(parts: string[]): PeriodType {
+		let result = PeriodType.Year;
+
+		if (parts.length > 1) {
+			if (parts[1] == "week") {
+				result = PeriodType.Week;
+			} else if (parts[1] == "month") {
+				result = PeriodType.Month;
+			} else if (parts[1] == "all") {
+				result = PeriodType.AllTime;
+			}
+		}
+
+		return result;
+	}
+
 
 	processMessage(msg: Message<boolean>) {
 		if (msg.author.bot) {
@@ -207,17 +224,20 @@ export class Main {
 		try {
 			this.logInfo(`User: ${msg.author.username}, Command: ${msg.content.substring(1)}`);
 
-			var command = msg.content.substring(1).toLowerCase();
+			let parts = msg.content.substring(1).toLowerCase().split(' ');
+			var command = parts[0];
 			let channel = msg.channel as TextChannel;
+
 			if (command == "help") {
 				this.help(channel);
 			} else if (command == "topdeaths") {
-				this.fetchTopDeaths(channel);
+				let period = this.getPeriod(parts);
+				this.fetchTopDeaths(channel, period);
 			} else if (command == "mostdeadly") {
-				this.fetchMostDeadly(channel);
+				let period = this.getPeriod(parts);
+				this.fetchMostDeadly(channel, period);
 			}
 			else if (command.startsWith("mostdeadlyfor")) {
-				let parts = content.split(' ');
 				if (parts.length != 2) {
 					Utility.sendMessage(channel, "Usage: !mostdeadlyfor adventurer_name");
 				} else {
@@ -230,7 +250,8 @@ export class Main {
 				}
 			}
 			else if (command == "topraisers") {
-				this.fetchTopRaisers(channel);
+				let period = this.getPeriod(parts);
+				this.fetchTopRaisers(channel, period);
 			} else if (command == "bestleaders") {
 				this.fetchBestLeaders(channel);
 			} else if (command.startsWith("statfor")) {

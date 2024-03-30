@@ -8,6 +8,13 @@ enum EventType {
 	Raised
 }
 
+export enum PeriodType {
+	Week,
+	Month,
+	Year,
+	AllTime
+}
+
 export class BaseInfo {
 	public start: number;
 	public end: number;
@@ -270,13 +277,42 @@ export class Statistics {
 		return [start, end];
 	}
 
-	public static async fetchTopDeaths(): Promise<TopDeathsInfo> {
+	private static buildPeriodFilter(period: PeriodType): number {
+		let start = new Date();
+		switch (period) {
+			case PeriodType.Week:
+				start.setDate(start.getDate() - 7);
+				break;
+			case PeriodType.Month:
+				start.setMonth(start.getMonth() - 1);
+				break;
+			case PeriodType.Year:
+				start.setMonth(start.getMonth() - 12);
+		}
+
+
+		return Utility.toUnixTimeStamp(start);
+	}
+
+	public static async fetchTopDeaths(period: PeriodType): Promise<TopDeathsInfo> {
 		let connection: Database = null;
 
 		try {
 			connection = await this.openDb();
 
-			let [start, end] = await this.fetchStartEndFromAlerts(connection);
+			let start = 0;
+			let end = 0;
+			let periodFilter = "";
+
+
+			if (period == PeriodType.AllTime) {
+				[start, end] = await this.fetchStartEndFromAlerts(connection);
+			} else {
+				start = this.buildPeriodFilter(period);
+				end = Utility.getUnixTimeStamp();
+				periodFilter = `AND timeStamp >= ${start} AND timeStamp <= ${end}`;
+
+			}
 
 			let result: TopDeathsInfo =
 			{
@@ -285,12 +321,12 @@ export class Statistics {
 				players: []
 			};
 
-			let cmd = `SELECT adventurer, COUNT(adventurer) AS c FROM alerts WHERE type = 0 GROUP BY adventurer ORDER BY c DESC`;
+			let cmd = `SELECT adventurer, COUNT(adventurer) AS c FROM alerts WHERE type = 0 ${periodFilter} GROUP BY adventurer ORDER BY c DESC`;
 			let data = await connection.all(cmd);
 			for (let i = 0; i < data.length; ++i) {
 				let row = data[i];
 
-				cmd = `SELECT COUNT(adventurer) AS c FROM alerts WHERE type = 1 AND adventurer='${row.adventurer}'`;
+				cmd = `SELECT COUNT(adventurer) AS c FROM alerts WHERE type = 1 AND adventurer='${row.adventurer}' ${periodFilter}`;
 				let data2 = await connection.all(cmd);
 
 				let pdi: TopDeathsStatInfo =
@@ -312,13 +348,23 @@ export class Statistics {
 		}
 	}
 
-	public static async fetchMostDeadly(): Promise<MostDeadlyInfo> {
+	public static async fetchMostDeadly(period: PeriodType): Promise<MostDeadlyInfo> {
 		let connection: Database = null;
 
 		try {
 			connection = await this.openDb();
 
-			let [start, end] = await this.fetchStartEndFromAlerts(connection);
+			let start = 0;
+			let end = 0;
+			let periodFilter = "";
+
+			if (period == PeriodType.AllTime) {
+				[start, end] = await this.fetchStartEndFromAlerts(connection);
+			} else {
+				start = this.buildPeriodFilter(period);
+				end = Utility.getUnixTimeStamp();
+				periodFilter = `WHERE timeStamp >= ${start} AND timeStamp <= ${end}`;
+			}
 
 			let result: MostDeadlyInfo =
 			{
@@ -329,7 +375,7 @@ export class Statistics {
 
 			let deathData: { [adventurer: string]: [number, string] } = {};
 			let statData: { [mob: string]: TopDeathsStatInfo } = {};
-			let cmd = `SELECT * FROM alerts ORDER BY timeStamp`;
+			let cmd = `SELECT * FROM alerts ${periodFilter} ORDER BY timeStamp`;
 			let data = await connection.all(cmd);
 			for (let i = 0; i < data.length; ++i) {
 				let row = data[i];
@@ -487,12 +533,23 @@ export class Statistics {
 		}
 	}
 
-	public static async fetchTopRaisers(): Promise<TopRaisersInfo> {
+	public static async fetchTopRaisers(period: PeriodType): Promise<TopRaisersInfo> {
 		let connection: Database = null;
 
 		try {
 			connection = await this.openDb();
-			let [start, end] = await this.fetchStartEndFromAlerts(connection);
+
+			let start = 0;
+			let end = 0;
+			let periodFilter = "";
+
+			if (period == PeriodType.AllTime) {
+				[start, end] = await this.fetchStartEndFromAlerts(connection);
+			} else {
+				start = this.buildPeriodFilter(period);
+				end = Utility.getUnixTimeStamp();
+				periodFilter = `AND timeStamp >= ${start} AND timeStamp <= ${end}`;
+			}
 
 			let result: TopRaisersInfo =
 			{
@@ -501,7 +558,7 @@ export class Statistics {
 				raisers: []
 			};
 
-			let cmd = `SELECT doer, COUNT(doer) AS c FROM alerts WHERE type = 1 GROUP BY doer ORDER BY c DESC`;
+			let cmd = `SELECT doer, COUNT(doer) AS c FROM alerts WHERE type = 1 ${periodFilter} GROUP BY doer ORDER BY c DESC`;
 			let data = await connection.all(cmd);
 			for (let i = 0; i < data.length; ++i) {
 				let row = data[i];

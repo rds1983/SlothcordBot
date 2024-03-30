@@ -67,8 +67,12 @@ export class Utility {
 		return null;
 	}
 
+	static toUnixTimeStamp(d: Date): number {
+		return Math.floor(d.getTime() / 1000);
+	}
+
 	static getUnixTimeStamp(): number {
-		return Math.floor(new Date().getTime() / 1000);
+		return this.toUnixTimeStamp(new Date());
 	}
 
 	static formatOnlyDate(value: number) {

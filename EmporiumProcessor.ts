@@ -231,8 +231,11 @@ export class EmporiumProcessor extends BaseProcessorImpl<{ [seller: string]: Auc
 			this.logError(err);
 		}
 
-		this.status = newAuctions;
-		this.saveStatus();
+		if (Object.keys(newAuctions).length > 0) {
+			// Workaround of buggy site behavior when it returns empty auction list sometimes
+			this.status = newAuctions;
+			this.saveStatus();
+		}
 	}
 
 	process(onFinished: () => void): void {
