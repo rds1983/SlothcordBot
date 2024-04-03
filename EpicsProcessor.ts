@@ -35,7 +35,7 @@ export class EpicsProcessor extends BaseProcessorImpl<Epic[]>
 		let dom = new JSDOM(data);
 		let document = dom.window.document;
 
-		let newEpics = [];
+		let newEpics: Epic[] = [];
 		let all = document.getElementsByTagName("div");
 		for (let i = 0; i < all.length; i++) {
 			let div = all[i];
@@ -68,6 +68,12 @@ export class EpicsProcessor extends BaseProcessorImpl<Epic[]>
 			}
 
 			newEpics.push(epic);
+		}
+
+		this.logInfo(`Epics count: ${newEpics.length}`);
+		if (newEpics.length == 0) {
+			this.logInfo(`Ignoring epics processing...`);
+			return;
 		}
 
 		try {
@@ -125,11 +131,29 @@ export class EpicsProcessor extends BaseProcessorImpl<Epic[]>
 			}
 
 			if (changed) {
-				let result = "";
+				// Group epics by continents
+				let epicsGrouped: { [continent: string]: Epic[] } = {};
 				for (let i = 0; i < newEpics.length; ++i) {
 					let epic = newEpics[i];
-					result += `${i + 1}. ${epic.name} in ${epic.area} at ${epic.continent}\n`;
+					if (!(epic.continent in epicsGrouped))
+					{
+						epicsGrouped[epic.continent] = [];
+					}
+
+					epicsGrouped[epic.continent].push(epic);
 				}
+
+				// Build messsage
+				let result = "";
+				for (let continent in epicsGrouped) {
+					result += `${continent}:\n`;
+
+					for (let i = 0; i < epicsGrouped[continent].length; ++i) {
+						let epic = epicsGrouped[continent][i];
+						result += `- ${epic.name} at ${epic.area}\n`;
+					}
+				}
+
 
 				// Fetch old messages
 				let messages = await this.channel.messages.fetch();
