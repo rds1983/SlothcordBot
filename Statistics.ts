@@ -73,7 +73,27 @@ export class GroupInfo {
 
 class RealGroup {
 	public rows: any[] = [];
+	public started: number;
 	public finished: number;
+}
+
+class RealGroupsInfo extends BaseInfo {
+	public realGroups: RealGroup[];
+}
+
+export class GameStatsInfo extends BaseInfo {
+	public adventurersDiedCount: number;
+	public deadlyCount: number;
+	public adventurersDeathsCount: number;
+	public adventurersRaisedCount: number;
+	public adventurersRaisersCount: number;
+	public adventurersRaisesCount: number;
+	public groupsCount: number;
+	public epicKillsByGroup: number;
+	public epicKillsSolo: number;
+	public itemsSoldCount: number;
+	public sellersCount: number;
+	public salesSum: number;
 }
 
 export class Statistics {
@@ -581,60 +601,74 @@ export class Statistics {
 		}
 	}
 
+	private static async fetchRealGroups(connection: Database): Promise<RealGroupsInfo> {
+		// Fetch all data
+		let cmd = `SELECT leader, size, started, finished FROM groups WHERE size > 2 ORDER BY id`;
+		let data = await connection.all(cmd);
+
+		// First run: group all data by real groups
+		let realGroups: RealGroup[] = [];
+		let start: number = null;
+		let end: number = null;
+		for (let i = 0; i < data.length; ++i) {
+			let row = data[i];
+
+			if (row.finished == 0) {
+				// Ignore ongoing groups
+				continue;
+			}
+
+			if (start == null || row.started < start) {
+				start = row.started;
+			}
+
+			if (end == null || row.finished > end) {
+				end = row.finished;
+			}
+
+			// Find the group this row could be continuation of
+			// Check last 4 groups
+			let realGroup: RealGroup = null;
+			for (let j = realGroups.length - 1; j >= Math.max(0, realGroups.length - 4); --j) {
+				if (Math.abs(realGroups[j].finished - row.started) < 8) {
+					// Found
+					realGroup = realGroups[j];
+					break;
+				}
+			}
+
+			if (realGroup == null) {
+				realGroup = new RealGroup();
+				realGroup.started = row.started;
+				realGroups.push(realGroup);
+			}
+
+			realGroup.rows.push(row);
+			realGroup.finished = row.finished;
+		}
+
+		let result: RealGroupsInfo = {
+			start: start,
+			end: end,
+			realGroups: realGroups
+		}
+
+		return result;
+	}
+
 	public static async fetchBestLeaders(): Promise<BestLeadersInfo> {
 		let connection: Database = null;
 
 		try {
 			connection = await this.openDb();
 
-			// Fetch all data
-			let cmd = `SELECT leader, size, started, finished FROM groups WHERE size > 2 ORDER BY id`;
-			let data = await connection.all(cmd);
-
 			// First run: group all data by real groups
-			let realGroups: RealGroup[] = [];
-			let start: number = null;
-			let end: number = null;
-			for (let i = 0; i < data.length; ++i) {
-				let row = data[i];
-
-				if (row.finished == 0) {
-					// Ignore ongoing groups
-					continue;
-				}
-
-				if (start == null || row.started < start) {
-					start = row.started;
-				}
-
-				if (end == null || row.finished > end) {
-					end = row.finished;
-				}
-
-				// Find the group this row could be continuation of
-				// Check last 4 groups
-				let realGroup: RealGroup = null;
-				for (let j = realGroups.length - 1; j >= Math.max(0, realGroups.length - 4); --j) {
-					if (Math.abs(realGroups[j].finished - row.started) < 8) {
-						// Found
-						realGroup = realGroups[j];
-						break;
-					}
-				}
-
-				if (realGroup == null) {
-					realGroup = new RealGroup();
-					realGroups.push(realGroup);
-				}
-
-				realGroup.rows.push(row);
-				realGroup.finished = row.finished;
-			}
+			let realGroups = await this.fetchRealGroups(connection);
 
 			// Second run: build up statistics
 			let stats: { [leader: string]: LeaderInfo } = {};
-			for (let i = 0; i < realGroups.length; ++i) {
-				let realGroup = realGroups[i];
+			for (let i = 0; i < realGroups.realGroups.length; ++i) {
+				let realGroup = realGroups.realGroups[i];
 				let leadersMask: { [leader: string]: boolean } = {};
 				for (let j = 0; j < realGroup.rows.length; ++j) {
 					let row = realGroup.rows[j];
@@ -681,14 +715,133 @@ export class Statistics {
 
 			let result: BestLeadersInfo =
 			{
-				start: start,
-				end: end,
+				start: realGroups.start,
+				end: realGroups.end,
 				leaders: []
 			};
 
 			for (let i = 0; i < sortedArray.length; ++i) {
 				result.leaders.push(sortedArray[i][1]);
 			}
+
+			return result;
+		}
+		finally {
+			if (connection != null) {
+				await connection.close();
+			}
+		}
+	}
+
+	public static async fetchGameStats(period: PeriodType): Promise<GameStatsInfo> {
+		let connection: Database = null;
+
+		try {
+			let result: GameStatsInfo =
+			{
+				start: 0,
+				end: 0,
+				adventurersDiedCount: 0,
+				deadlyCount: 0,
+				adventurersDeathsCount: 0,
+				adventurersRaisedCount: 0,
+				adventurersRaisersCount: 0,
+				adventurersRaisesCount: 0,
+				groupsCount: 0,
+				epicKillsByGroup: 0,
+				epicKillsSolo: 0,
+				itemsSoldCount: 0,
+				sellersCount: 0,
+				salesSum: 0
+			};
+
+			connection = await this.openDb();
+
+			let start = 0;
+			let end = 0;
+			let periodFilter = "";
+			let periodFilterWithoutAnd = "";
+
+			if (period == PeriodType.AllTime) {
+				[start, end] = await this.fetchStartEndFromAlerts(connection);
+			} else {
+				start = this.buildPeriodFilter(period);
+				end = Utility.getUnixTimeStamp();
+				let str = `timeStamp >= ${start} AND timeStamp <= ${end}`;
+				periodFilter = `AND ${str}`;
+				periodFilterWithoutAnd = `WHERE ${str}`;
+			}
+
+			result.start = start;
+			result.end = end;
+
+			let cmd = `SELECT COUNT(DISTINCT adventurer) as c FROM alerts WHERE type=0 ${periodFilter}`;
+			let data = await connection.all(cmd);
+
+			result.adventurersDiedCount = data[0].c;
+
+			cmd = `SELECT COUNT(DISTINCT doer) as c FROM alerts WHERE type=0 ${periodFilter}`;
+			data = await connection.all(cmd);
+			result.deadlyCount = data[0].c;
+
+			cmd = `SELECT COUNT(id) as c FROM alerts WHERE type=0 ${periodFilter}`;
+			data = await connection.all(cmd);
+
+			result.adventurersDeathsCount = data[0].c;
+
+			cmd = `SELECT COUNT(DISTINCT adventurer) as c FROM alerts WHERE type=1 ${periodFilter}`;
+			data = await connection.all(cmd);
+
+			result.adventurersRaisedCount = data[0].c;
+
+			cmd = `SELECT COUNT(DISTINCT doer) as c FROM alerts WHERE type=1 ${periodFilter}`;
+			data = await connection.all(cmd);
+
+			result.adventurersRaisersCount = data[0].c;
+
+			cmd = `SELECT COUNT(id) as c FROM alerts WHERE type=1 ${periodFilter}`;
+			data = await connection.all(cmd);
+
+			result.adventurersRaisesCount = data[0].c;
+
+			let realGroups = await this.fetchRealGroups(connection);
+			if (period != PeriodType.AllTime)
+			{
+				for (let i = 0; i < realGroups.realGroups.length; ++i) {
+					let realGroup = realGroups.realGroups[i];
+
+					if (realGroup.started >= start && realGroup.finished <= end) {
+						++result.groupsCount;
+					}
+				}
+			} else {
+				result.groupsCount = realGroups.realGroups.length;
+			}
+
+			cmd = `SELECT COUNT(id) as c FROM epic_kills WHERE groupId IS NOT NULL ${periodFilter}`;
+			data = await connection.all(cmd);
+
+			result.epicKillsByGroup = data[0].c;
+
+			cmd = `SELECT COUNT(id) as c FROM epic_kills WHERE groupId IS NULL ${periodFilter}`;
+			data = await connection.all(cmd);
+
+			result.epicKillsSolo = data[0].c;
+
+			cmd = `SELECT COUNT(id) as c FROM sales ${periodFilterWithoutAnd}`;
+			data = await connection.all(cmd);
+
+			result.itemsSoldCount = data[0].c;
+
+			cmd = `SELECT COUNT(DISTINCT seller) as c FROM sales ${periodFilterWithoutAnd}`;
+			data = await connection.all(cmd);
+
+			result.sellersCount = data[0].c;
+
+			cmd = `SELECT SUM(price) as c FROM sales ${periodFilterWithoutAnd}`;
+			data = await connection.all(cmd);
+
+			result.salesSum = data[0].c;
 
 			return result;
 		}

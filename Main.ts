@@ -149,6 +149,24 @@ export class Main {
 		this.fetchBestLeadersAsync(channel).catch(err => this.logError(err));
 	}
 
+	async fetchGameStatsAsync(channel: TextChannel, period: PeriodType): Promise<void> {
+		let gameStats = await Statistics.fetchGameStats(period);
+
+		let message = `Game statistics from ${Utility.formatOnlyDate(gameStats.start)} to ${Utility.formatOnlyDate(gameStats.end)}.\n\n`;
+		message += `${gameStats.adventurersDiedCount} different adventurers were slain by ${gameStats.deadlyCount} different creatures ${gameStats.adventurersDeathsCount} times.\n`;
+		message += `${gameStats.adventurersRaisedCount} different adventurers were raised by ${gameStats.adventurersRaisersCount} different raisers ${gameStats.adventurersRaisesCount} times.\n`;
+		message += `${gameStats.groupsCount} groups ran.\n`;
+		message += `${gameStats.epicKillsByGroup}/${gameStats.epicKillsSolo} epics were slain by groups/two-manned or soloed. Total: ${gameStats.epicKillsByGroup + gameStats.epicKillsSolo}.\n`;
+		message += `${gameStats.itemsSoldCount} items were sold by ${gameStats.sellersCount} different sellers for the amount of ${Utility.formatNumber(gameStats.salesSum)}.\n`;
+
+		this.logInfo(message);
+		Utility.sendMessage(channel, message);
+	}
+
+	fetchGameStats(channel: TextChannel, period: PeriodType): void {
+		this.fetchGameStatsAsync(channel, period).catch(err => this.logError(err));
+	}
+
 	checkOwnership(user: string, adventurer: string, channel: TextChannel): boolean {
 		let charOwned = 0;
 		if (user.toLowerCase() == adventurer.toLowerCase()) {
@@ -186,7 +204,7 @@ export class Main {
 	}
 
 	help(channel: TextChannel) {
-		let message = "I know following commands:\n!topdeaths [week|month|**year**|all]\n!mostdeadly [week|month|**year**|all]\n!topraisers [week|month|**year**|all]\n!bestleaders\n!mostdeadlyfor player_name\n!statfor player_name";
+		let message = "I know following commands:\n!topdeaths [week|month|**year**|all]\n!mostdeadly [week|month|**year**|all]\n!topraisers [week|month|**year**|all]\n!gamestats [week|month|**year**|all]\n!bestleaders\n!mostdeadlyfor player_name\n!statfor player_name";
 
 		this.logInfo(message);
 		Utility.sendMessage(channel, message);
@@ -254,6 +272,9 @@ export class Main {
 				this.fetchTopRaisers(channel, period);
 			} else if (command == "bestleaders") {
 				this.fetchBestLeaders(channel);
+			} else if (command == "gamestats") {
+				let period = this.getPeriod(parts);
+				this.fetchGameStats(channel, period);
 			} else if (command.startsWith("statfor")) {
 				let parts = content.split(' ');
 				if (parts.length != 2) {
