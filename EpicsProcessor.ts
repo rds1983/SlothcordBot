@@ -93,6 +93,8 @@ export class EpicsProcessor extends BaseProcessorImpl<Epic[]>
 					}
 
 					if (!found) {
+						await Statistics.storeEpicSpawn(newEpic.name);
+
 						changed = true;
 					}
 				}

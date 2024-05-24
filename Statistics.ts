@@ -260,6 +260,29 @@ export class Statistics {
 		}
 	}
 
+	public static async storeEpicSpawn(epic: string): Promise<void> {
+		let connection: Database = null;
+		try {
+			connection = await this.openDb();
+
+			let timeStamp = Utility.getUnixTimeStamp();
+
+			// Start new one
+			let cmd = `INSERT INTO epic_history(epic, type, groupId, timeStamp) VALUES(?, ?, ?, ?)`;
+			await connection.run(cmd, epic, 0, null, timeStamp);
+
+			this.logInfo(`Epic ${epic} spawned`);
+		}
+		catch (err) {
+			this.logError(err);
+		}
+		finally {
+			if (connection != null) {
+				await connection.close();
+			}
+		}
+	}
+
 	public static async storeEpicKill(epic: string, groupId: number): Promise<void> {
 		let connection: Database = null;
 		try {
@@ -268,8 +291,8 @@ export class Statistics {
 			let timeStamp = Utility.getUnixTimeStamp();
 
 			// Start new one
-			let cmd = `INSERT INTO epic_kills(epic, groupId, timeStamp) VALUES(?, ?, ?)`;
-			await connection.run(cmd, epic, groupId, timeStamp);
+			let cmd = `INSERT INTO epic_history(epic, type, groupId, timeStamp) VALUES(?, ?, ?, ?)`;
+			await connection.run(cmd, epic, 1, groupId, timeStamp);
 
 			if (groupId != null) {
 				this.logInfo(`Group with id ${groupId} defeated epic ${epic}`);
@@ -818,12 +841,12 @@ export class Statistics {
 				result.groupsCount = realGroups.realGroups.length;
 			}
 
-			cmd = `SELECT COUNT(id) as c FROM epic_kills WHERE groupId IS NOT NULL ${periodFilter}`;
+			cmd = `SELECT COUNT(id) as c FROM epic_history WHERE type==1 AND groupId IS NOT NULL ${periodFilter}`;
 			data = await connection.all(cmd);
 
 			result.epicKillsByGroup = data[0].c;
 
-			cmd = `SELECT COUNT(id) as c FROM epic_kills WHERE groupId IS NULL ${periodFilter}`;
+			cmd = `SELECT COUNT(id) as c FROM epic_history WHERE type==1 AND  groupId IS NULL ${periodFilter}`;
 			data = await connection.all(cmd);
 
 			result.epicKillsSolo = data[0].c;
