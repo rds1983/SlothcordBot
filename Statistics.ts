@@ -548,21 +548,21 @@ export class Statistics {
 			// Firstly determine the mobile
 
 			// Equals
-			let cmd = `SELECT doer AS d FROM alerts WHERE type = 0 AND doer = '${name}' COLLATE NOCASE LIMIT 1`;
-			let data = await connection.all(cmd);
+			let cmd = `SELECT doer AS d FROM alerts WHERE type = 0 AND doer = ? COLLATE NOCASE LIMIT 1`;
+			let data = await connection.all(cmd, [name]);
 
 			if (data.length == 0)
 			{
 				// Try starts with
-				cmd = `SELECT doer AS d FROM alerts WHERE type = 0 AND doer LIKE '${name}%' COLLATE NOCASE LIMIT 1`;
-				data = await connection.all(cmd);
+				cmd = `SELECT doer AS d FROM alerts WHERE type = 0 AND doer LIKE ? COLLATE NOCASE LIMIT 1`;
+				data = await connection.all(cmd, [`${name}%`]);
 			}
 
 			if (data.length == 0)
 			{
 				// Finally try contains
-				cmd = `SELECT doer AS d FROM alerts WHERE type = 0 AND doer LIKE '%${name}%' COLLATE NOCASE LIMIT 1`;
-				data = await connection.all(cmd);
+				cmd = `SELECT doer AS d FROM alerts WHERE type = 0 AND doer LIKE ? COLLATE NOCASE LIMIT 1`;
+				data = await connection.all(cmd, [`%${name}%`]);
 			}
 			
 			if (data.length == 0)
@@ -573,8 +573,8 @@ export class Statistics {
 			result.name = data[0].d;
 
 			// character should be passed as parameter, but for some reason it generates SQLITE_RANGE error
-			cmd = `SELECT adventurer, COUNT(adventurer) AS c FROM alerts WHERE type = 0 AND doer = '${result.name}' COLLATE NOCASE GROUP BY adventurer ORDER BY c DESC`;
-			data = await connection.all(cmd);
+			cmd = `SELECT adventurer, COUNT(adventurer) AS c FROM alerts WHERE type = 0 AND doer = ? COLLATE NOCASE GROUP BY adventurer ORDER BY c DESC`;
+			data = await connection.all(cmd, [result.name]);
 			for (let i = 0; i < data.length; ++i) {
 				let row = data[i];
 

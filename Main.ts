@@ -292,12 +292,13 @@ export class Main {
 				}
 			}
 			else if (command.startsWith("victimsof")) {
-				if (parts.length != 2) {
+				if (parts.length == 1) {
 					Utility.sendMessage(channel, "Usage: !victimsof mobile");
 				} else {
-					this.fetchVictimsOf(channel, parts[1]);
+					let args = msg.content.substring(11);
+					this.fetchVictimsOf(channel, args);
 				}
-			}			
+			}
 			else if (command == "topraisers") {
 				let period = this.getPeriod(parts);
 				this.fetchTopRaisers(channel, period);
