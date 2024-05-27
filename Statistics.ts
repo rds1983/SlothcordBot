@@ -546,8 +546,25 @@ export class Statistics {
 			};
 
 			// Firstly determine the mobile
-			let cmd = `SELECT doer AS d FROM alerts WHERE type = 0 AND doer LIKE '%${name}%' COLLATE NOCASE LIMIT 1`;
+
+			// Equals
+			let cmd = `SELECT doer AS d FROM alerts WHERE type = 0 AND doer = '${name}' COLLATE NOCASE LIMIT 1`;
 			let data = await connection.all(cmd);
+
+			if (data.length == 0)
+			{
+				// Try starts with
+				cmd = `SELECT doer AS d FROM alerts WHERE type = 0 AND doer LIKE '${name}%' COLLATE NOCASE LIMIT 1`;
+				data = await connection.all(cmd);
+			}
+
+			if (data.length == 0)
+			{
+				// Finally try contains
+				cmd = `SELECT doer AS d FROM alerts WHERE type = 0 AND doer LIKE '%${name}%' COLLATE NOCASE LIMIT 1`;
+				data = await connection.all(cmd);
+			}
+			
 			if (data.length == 0)
 			{
 				return null;
