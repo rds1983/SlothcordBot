@@ -93,6 +93,30 @@ export class Main {
 		this.fetchMostDeadlyForAsync(channel, character).catch(err => this.logError(err));
 	}
 
+	async fetchVictimsOfAsync(channel: TextChannel, name: string): Promise<void> {
+		let victimsOf = await Statistics.fetchVictimsOf(name);
+
+		let message = "";
+		if (victimsOf == null) {
+			message = `Unable to find mobile with name ${name}`;
+		} else {
+
+			message = `Victims of rating for '${victimsOf.name}' from ${Utility.formatOnlyDate(victimsOf.start)} to ${Utility.formatOnlyDate(victimsOf.end)}.\n\n`;
+
+			for (let i = 0; i < victimsOf.deadlies.length && i < this.RatingMaximum; ++i) {
+				let d = victimsOf.deadlies[i];
+				message += `${i + 1}. Killed ${d.name} ${d.count} times.\n`;
+			}
+		}
+
+		this.logInfo(message);
+		Utility.sendMessage(channel, message);
+	}
+
+	fetchVictimsOf(channel: TextChannel, name: string): void {
+		this.fetchVictimsOfAsync(channel, name).catch(err => this.logError(err));
+	}
+
 	async fetchStatForAsync(channel: TextChannel, character: string): Promise<void> {
 		let mostDeadly = await Statistics.fetchStatFor(character);
 
@@ -204,7 +228,7 @@ export class Main {
 	}
 
 	help(channel: TextChannel) {
-		let message = "I know following commands:\n!topdeaths [week|month|**year**|all]\n!mostdeadly [week|month|**year**|all]\n!topraisers [week|month|**year**|all]\n!gamestats [week|month|**year**|all]\n!bestleaders\n!mostdeadlyfor player_name\n!statfor player_name";
+		let message = "I know following commands:\n!topdeaths [week|month|**year**|all]\n!mostdeadly [week|month|**year**|all]\n!topraisers [week|month|**year**|all]\n!gamestats [week|month|**year**|all]\n!bestleaders\n!mostdeadlyfor player_name\n!statfor player_name\n!victimsof mobile_name\n";
 
 		this.logInfo(message);
 		Utility.sendMessage(channel, message);
@@ -267,6 +291,13 @@ export class Main {
 					}
 				}
 			}
+			else if (command.startsWith("victimsof")) {
+				if (parts.length != 2) {
+					Utility.sendMessage(channel, "Usage: !victimsof mobile");
+				} else {
+					this.fetchVictimsOf(channel, parts[1]);
+				}
+			}			
 			else if (command == "topraisers") {
 				let period = this.getPeriod(parts);
 				this.fetchTopRaisers(channel, period);

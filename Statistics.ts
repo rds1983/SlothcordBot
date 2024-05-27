@@ -39,6 +39,7 @@ export class MostDeadlyInfo extends BaseInfo {
 }
 
 export class MostDeadlyInfo2 extends BaseInfo {
+	public name: string;
 	public deadlies: StatInfo[];
 }
 
@@ -498,6 +499,7 @@ export class Statistics {
 
 			let result: MostDeadlyInfo2 =
 			{
+				name: character,
 				start: start,
 				end: end,
 				deadlies: []
@@ -512,6 +514,56 @@ export class Statistics {
 				let ki: StatInfo =
 				{
 					name: row.doer,
+					count: row.c
+				};
+
+				result.deadlies.push(ki);
+			}
+
+			return result;
+		}
+		finally {
+			if (connection != null) {
+				await connection.close();
+			}
+		}
+	}
+
+	public static async fetchVictimsOf(name: string): Promise<MostDeadlyInfo2> {
+		let connection: Database = null;
+
+		try {
+			connection = await this.openDb();
+
+			let [start, end] = await this.fetchStartEndFromAlerts(connection);
+
+			let result: MostDeadlyInfo2 =
+			{
+				name: "",
+				start: start,
+				end: end,
+				deadlies: []
+			};
+
+			// Firstly determine the mobile
+			let cmd = `SELECT doer AS d FROM alerts WHERE type = 0 AND doer LIKE '%${name}%' COLLATE NOCASE LIMIT 1`;
+			let data = await connection.all(cmd);
+			if (data.length == 0)
+			{
+				return null;
+			}
+
+			result.name = data[0].d;
+
+			// character should be passed as parameter, but for some reason it generates SQLITE_RANGE error
+			cmd = `SELECT adventurer, COUNT(adventurer) AS c FROM alerts WHERE type = 0 AND doer = '${result.name}' COLLATE NOCASE GROUP BY adventurer ORDER BY c DESC`;
+			data = await connection.all(cmd);
+			for (let i = 0; i < data.length; ++i) {
+				let row = data[i];
+
+				let ki: StatInfo =
+				{
+					name: row.adventurer,
 					count: row.c
 				};
 
