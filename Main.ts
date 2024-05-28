@@ -98,7 +98,7 @@ export class Main {
 
 		let message = "";
 		if (victimsOf == null) {
-			message = `Unable to find mobile with name ${name}`;
+			message = `Unable to find mobile with name '${name}'`;
 		} else {
 
 			message = `Victims of rating for '${victimsOf.name}' from ${Utility.formatOnlyDate(victimsOf.start)} to ${Utility.formatOnlyDate(victimsOf.end)}.\n\n`;
@@ -295,7 +295,7 @@ export class Main {
 				if (parts.length == 1) {
 					Utility.sendMessage(channel, "Usage: !victimsof mobile");
 				} else {
-					let args = msg.content.substring(11);
+					let args = msg.content.substring(11).trim();
 					this.fetchVictimsOf(channel, args);
 				}
 			}
