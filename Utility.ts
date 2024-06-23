@@ -79,6 +79,10 @@ export class Utility {
 		return moment.unix(value).format("MMMM Do YYYY");
 	}
 
+	static formatDateTime(value: number) {
+		return moment.unix(value).format("MMMM Do YYYY, HH:mm");
+	}	
+
 	static async sendMessage(channel: TextChannel, message: string): Promise<Message<true>> {
 		const embed = new EmbedBuilder().setDescription(message);
 		return channel.send({ embeds: [embed] });

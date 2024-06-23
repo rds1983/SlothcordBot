@@ -5,7 +5,7 @@ import { EpicsProcessor } from "./EpicsProcessor";
 import { ForumProcessor } from "./ForumProcessor";
 import { Global } from "./Global";
 import { GroupsProcessor } from "./GroupsProcessor";
-import { PeriodType, Statistics } from "./Statistics";
+import { EpicHistoryEventType, PeriodType, Statistics } from "./Statistics";
 import { LoggerWrapper } from "./LoggerWrapper";
 import { BaseProcessor } from "./BaseProcessor";
 import { Utility } from "./Utility";
@@ -116,6 +116,41 @@ export class Main {
 	fetchVictimsOf(channel: TextChannel, name: string): void {
 		this.fetchVictimsOfAsync(channel, name).catch(err => this.logError(err));
 	}
+
+	async fetchEpicHistoryAsync(channel: TextChannel, name: string): Promise<void> {
+		let EpicHistory = await Statistics.fetchEpicHistory(name);
+
+		let message = "";
+		if (EpicHistory == null) {
+			message = `Unable to find epic with name '${name}'`;
+		} else {
+			message = `Epic history for '${EpicHistory.name}'.\n\n`;
+
+			for (let i = 0; i < EpicHistory.history.length; ++i) {
+				let d = EpicHistory.history[i];
+
+				message += `${Utility.formatDateTime(d.timeStamp)}: `;
+
+				if (d.eventType == EpicHistoryEventType.Appeared)
+				{
+					message += `Appeared\n`;
+				} else if (d.leader == null)
+				{
+					message += `Disappeared\n`;
+				} else
+				{
+					message += `Defeated by ${d.leader}'s group\n`;
+				}
+			}
+		}
+
+		this.logInfo(message);
+		Utility.sendMessage(channel, message);
+	}
+
+	fetchEpicHistory(channel: TextChannel, name: string): void {
+		this.fetchEpicHistoryAsync(channel, name).catch(err => this.logError(err));
+	}	
 
 	async fetchStatForAsync(channel: TextChannel, character: string): Promise<void> {
 		let mostDeadly = await Statistics.fetchStatFor(character);
@@ -228,7 +263,7 @@ export class Main {
 	}
 
 	help(channel: TextChannel) {
-		let message = "I know following commands:\n!topdeaths [week|month|**year**|all]\n!mostdeadly [week|month|**year**|all]\n!topraisers [week|month|**year**|all]\n!gamestats [week|month|**year**|all]\n!bestleaders\n!mostdeadlyfor player_name\n!statfor player_name\n!victimsof mobile_name\n";
+		let message = "I know following commands:\n!topdeaths [week|month|**year**|all]\n!mostdeadly [week|month|**year**|all]\n!topraisers [week|month|**year**|all]\n!gamestats [week|month|**year**|all]\n!bestleaders\n!mostdeadlyfor player_name\n!statfor player_name\n!victimsof mobile_name\n!epichistory epic_name\n";
 
 		this.logInfo(message);
 		Utility.sendMessage(channel, message);
@@ -297,6 +332,14 @@ export class Main {
 				} else {
 					let args = msg.content.substring(11).trim();
 					this.fetchVictimsOf(channel, args);
+				}
+			}
+			else if (command.startsWith("epichistory")) {
+				if (parts.length == 1) {
+					Utility.sendMessage(channel, "Usage: !epichistory epic");
+				} else {
+					let args = msg.content.substring(13).trim();
+					this.fetchEpicHistory(channel, args);
 				}
 			}
 			else if (command == "topraisers") {

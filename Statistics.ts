@@ -8,6 +8,12 @@ enum EventType {
 	Raised
 }
 
+export enum EpicHistoryEventType
+{
+	Appeared,
+	Disappeared
+}
+
 export enum PeriodType {
 	Week,
 	Month,
@@ -70,6 +76,17 @@ export class BestLeadersInfo extends BaseInfo {
 export class GroupInfo {
 	public id: number;
 	public leader: string;
+}
+
+export class EpicHistoryRecordInfo {
+	public timeStamp: number;
+	public eventType: EpicHistoryEventType;
+	public leader: string;
+}
+
+export class EpicHistoryInfo {
+	public name: string;
+	public history: EpicHistoryRecordInfo[];
 }
 
 class RealGroup {
@@ -585,6 +602,67 @@ export class Statistics {
 				};
 
 				result.deadlies.push(ki);
+			}
+
+			return result;
+		}
+		finally {
+			if (connection != null) {
+				await connection.close();
+			}
+		}
+	}
+
+	public static async fetchEpicHistory(name: string): Promise<EpicHistoryInfo> {
+		let connection: Database = null;
+
+		try {
+			connection = await this.openDb();
+
+			// Firstly determine the epic
+
+			// Equals
+			let cmd = `SELECT epic as e FROM epic_history WHERE epic = ? COLLATE NOCASE LIMIT 1`;
+			let data = await connection.all(cmd, [name]);
+
+			if (data.length == 0)
+			{
+				// Try starts with
+				cmd = `SELECT epic as e FROM epic_history WHERE epic LIKE ? COLLATE NOCASE LIMIT 1`;
+				data = await connection.all(cmd, [`${name}%`]);
+			}
+
+			if (data.length == 0)
+			{
+				// Finally try contains
+				cmd = `SELECT epic as e FROM epic_history WHERE epic LIKE ? COLLATE NOCASE LIMIT 1`;
+				data = await connection.all(cmd, [`%${name}%`]);
+			}
+			
+			if (data.length == 0)
+			{
+				return null;
+			}
+
+			let result: EpicHistoryInfo =
+			{
+				name: data[0].e,
+				history: []
+			};
+
+			cmd = `SELECT timeStamp, type, leader FROM epic_history LEFT JOIN groups ON epic_history.groupId = groups.id WHERE epic = ? COLLATE NOCASE ORDER BY timestamp DESC LIMIT 20`;
+			data = await connection.all(cmd, [result.name]);
+			for (let i = 0; i < data.length; ++i) {
+				let row = data[i];
+
+				let ki: EpicHistoryRecordInfo =
+				{
+					eventType: row.type == 0?EpicHistoryEventType.Appeared:EpicHistoryEventType.Disappeared,
+					timeStamp: row.timeStamp,
+					leader: row.leader
+				};
+
+				result.history.push(ki);
 			}
 
 			return result;
