@@ -350,7 +350,7 @@ export class Main {
 			} else if (command == "gamestats") {
 				let period = this.getPeriod(parts);
 				this.fetchGameStats(channel, period);
-			} else if (command.startsWith("statfor")) {
+			} else if (command.startsWith("statfor") || command.startsWith("statsfor")) {
 				let parts = content.split(' ');
 				if (parts.length != 2) {
 					Utility.sendMessage(channel, "Usage: !statfor adventurer_name");
