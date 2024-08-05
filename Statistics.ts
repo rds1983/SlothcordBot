@@ -8,8 +8,7 @@ enum EventType {
 	Raised
 }
 
-export enum EpicHistoryEventType
-{
+export enum EpicHistoryEventType {
 	Appeared,
 	Disappeared
 }
@@ -112,6 +111,16 @@ export class GameStatsInfo extends BaseInfo {
 	public itemsSoldCount: number;
 	public sellersCount: number;
 	public salesSum: number;
+}
+
+export class SaleInfo {
+	public item: string;
+	public count: number;
+	public sum: number;
+}
+
+export class SalesInfo extends BaseInfo {
+	public sales: SaleInfo[];
 }
 
 export class Statistics {
@@ -568,22 +577,19 @@ export class Statistics {
 			let cmd = `SELECT doer AS d FROM alerts WHERE type = 0 AND doer = ? COLLATE NOCASE LIMIT 1`;
 			let data = await connection.all(cmd, [name]);
 
-			if (data.length == 0)
-			{
+			if (data.length == 0) {
 				// Try starts with
 				cmd = `SELECT doer AS d FROM alerts WHERE type = 0 AND doer LIKE ? COLLATE NOCASE LIMIT 1`;
 				data = await connection.all(cmd, [`${name}%`]);
 			}
 
-			if (data.length == 0)
-			{
+			if (data.length == 0) {
 				// Finally try contains
 				cmd = `SELECT doer AS d FROM alerts WHERE type = 0 AND doer LIKE ? COLLATE NOCASE LIMIT 1`;
 				data = await connection.all(cmd, [`%${name}%`]);
 			}
-			
-			if (data.length == 0)
-			{
+
+			if (data.length == 0) {
 				return null;
 			}
 
@@ -625,22 +631,19 @@ export class Statistics {
 			let cmd = `SELECT epic as e FROM epic_history WHERE epic = ? COLLATE NOCASE LIMIT 1`;
 			let data = await connection.all(cmd, [name]);
 
-			if (data.length == 0)
-			{
+			if (data.length == 0) {
 				// Try starts with
 				cmd = `SELECT epic as e FROM epic_history WHERE epic LIKE ? COLLATE NOCASE LIMIT 1`;
 				data = await connection.all(cmd, [`${name}%`]);
 			}
 
-			if (data.length == 0)
-			{
+			if (data.length == 0) {
 				// Finally try contains
 				cmd = `SELECT epic as e FROM epic_history WHERE epic LIKE ? COLLATE NOCASE LIMIT 1`;
 				data = await connection.all(cmd, [`%${name}%`]);
 			}
-			
-			if (data.length == 0)
-			{
+
+			if (data.length == 0) {
 				return null;
 			}
 
@@ -657,7 +660,7 @@ export class Statistics {
 
 				let ki: EpicHistoryRecordInfo =
 				{
-					eventType: row.type == 0?EpicHistoryEventType.Appeared:EpicHistoryEventType.Disappeared,
+					eventType: row.type == 0 ? EpicHistoryEventType.Appeared : EpicHistoryEventType.Disappeared,
 					timeStamp: row.timeStamp,
 					leader: row.leader
 				};
@@ -975,8 +978,7 @@ export class Statistics {
 			result.adventurersRaisesCount = data[0].c;
 
 			let realGroups = await this.fetchRealGroups(connection);
-			if (period != PeriodType.AllTime)
-			{
+			if (period != PeriodType.AllTime) {
 				for (let i = 0; i < realGroups.realGroups.length; ++i) {
 					let realGroup = realGroups.realGroups[i];
 
@@ -1014,6 +1016,56 @@ export class Statistics {
 			result.salesSum = data[0].c;
 
 			return result;
+		}
+		finally {
+			if (connection != null) {
+				await connection.close();
+			}
+		}
+	}
+
+	public static async fetchBestSellers(period: PeriodType): Promise<SalesInfo> {
+		let connection: Database = null;
+
+		try {
+			connection = await this.openDb();
+
+			let start = 0;
+			let end = 0;
+			let periodFilter = "";
+
+			if (period == PeriodType.AllTime) {
+				[start, end] = await this.fetchStartEndFromAlerts(connection);
+			} else {
+				start = this.buildPeriodFilter(period);
+				end = Utility.getUnixTimeStamp();
+				periodFilter = `WHERE timeStamp >= ${start} AND timeStamp <= ${end}`;
+			}
+
+			let result: SalesInfo =
+			{
+				start: start,
+				end: end,
+				sales: []
+			};
+
+			let cmd = `SELECT item, COUNT(item) as c, SUM(price) as s FROM sales ${periodFilter} GROUP BY item ORDER BY c DESC LIMIT 10`;
+			let data = await connection.all(cmd);
+			for (let i = 0; i < data.length; ++i) {
+				let row = data[i];
+
+				let si: SaleInfo =
+				{
+					item: row.item,
+					count: row.c,
+					sum: row.s
+				};
+
+				result.sales.push(si);
+			}
+
+			return result;
+
 		}
 		finally {
 			if (connection != null) {

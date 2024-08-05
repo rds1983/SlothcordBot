@@ -226,6 +226,26 @@ export class Main {
 		this.fetchGameStatsAsync(channel, period).catch(err => this.logError(err));
 	}
 
+	async fetchBestSellersAsync(channel: TextChannel, period: PeriodType): Promise<void> {
+		let bestSellers = await Statistics.fetchBestSellers(period);
+
+		let message = `Best sellers rating from ${Utility.formatOnlyDate(bestSellers.start)} to ${Utility.formatOnlyDate(bestSellers.end)}.\n\n`;
+
+		for (let i = 0; i < bestSellers.sales.length && i < this.RatingMaximum; ++i) {
+			let d = bestSellers.sales[i];
+			let roundedSize = Math.round(d.sum / d.count);
+
+			message += `${i + 1}. **${d.item}** was sold ${d.count} times. Average price was ${roundedSize}.\n`;
+		}
+
+		this.logInfo(message);
+		Utility.sendMessage(channel, message);
+	}
+
+	fetchBestSellers(channel: TextChannel, period: PeriodType): void {
+		this.fetchBestSellersAsync(channel, period).catch(err => this.logError(err));
+	}
+
 	checkOwnership(user: string, adventurer: string, channel: TextChannel): boolean {
 		let charOwned = 0;
 		if (user.toLowerCase() == adventurer.toLowerCase()) {
@@ -263,7 +283,7 @@ export class Main {
 	}
 
 	help(channel: TextChannel) {
-		let message = "I know following commands:\n!topdeaths [week|month|**year**|all]\n!mostdeadly [week|month|**year**|all]\n!topraisers [week|month|**year**|all]\n!gamestats [week|month|**year**|all]\n!bestleaders\n!mostdeadlyfor player_name\n!statfor player_name\n!victimsof mobile_name\n!epichistory epic_name\n";
+		let message = "I know following commands:\n!topdeaths [week|month|**year**|all]\n!mostdeadly [week|month|**year**|all]\n!topraisers [week|month|**year**|all]\n!gamestats [week|month|**year**|all]\n!bestsellers [week|month|**year**|all]\n!bestleaders\n!mostdeadlyfor player_name\n!statfor player_name\n!victimsof mobile_name\n!epichistory epic_name\n";
 
 		this.logInfo(message);
 		Utility.sendMessage(channel, message);
@@ -345,7 +365,10 @@ export class Main {
 			else if (command == "topraisers") {
 				let period = this.getPeriod(parts);
 				this.fetchTopRaisers(channel, period);
-			} else if (command == "bestleaders") {
+			} else if (command == "bestsellers") {
+				let period = this.getPeriod(parts);
+				this.fetchBestSellers(channel, period);
+			}else if (command == "bestleaders") {
 				this.fetchBestLeaders(channel);
 			} else if (command == "gamestats") {
 				let period = this.getPeriod(parts);
