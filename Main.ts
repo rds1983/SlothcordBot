@@ -235,7 +235,7 @@ export class Main {
 			let d = bestSellers.sales[i];
 			let roundedSize = Math.round(d.sum / d.count);
 
-			message += `${i + 1}. **${d.item}** was sold ${d.count} times. Average price was ${roundedSize}.\n`;
+			message += `${i + 1}. ${EmporiumProcessor.buildItemLink(d.item)} was sold ${d.count} times. Average price was ${roundedSize}.\n`;
 		}
 
 		this.logInfo(message);
