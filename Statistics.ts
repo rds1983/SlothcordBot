@@ -34,7 +34,6 @@ export class TopDeathsStatInfo extends StatInfo {
 	public raises: number;
 }
 
-
 export class TopDeathsInfo extends BaseInfo {
 	public players: TopDeathsStatInfo[];
 }
@@ -121,6 +120,14 @@ export class SaleInfo {
 
 export class SalesInfo extends BaseInfo {
 	public sales: SaleInfo[];
+}
+
+export class MerchantInfo extends StatInfo {
+	public sum: number;
+}
+
+export class MerchantsInfo extends BaseInfo {
+	public merchants: MerchantInfo[];
 }
 
 export class Statistics {
@@ -1062,6 +1069,56 @@ export class Statistics {
 				};
 
 				result.sales.push(si);
+			}
+
+			return result;
+
+		}
+		finally {
+			if (connection != null) {
+				await connection.close();
+			}
+		}
+	}
+
+	public static async fetchTopMerchants(period: PeriodType): Promise<MerchantsInfo> {
+		let connection: Database = null;
+
+		try {
+			connection = await this.openDb();
+
+			let start = 0;
+			let end = 0;
+			let periodFilter = "";
+
+			if (period == PeriodType.AllTime) {
+				[start, end] = await this.fetchStartEndFromAlerts(connection);
+			} else {
+				start = this.buildPeriodFilter(period);
+				end = Utility.getUnixTimeStamp();
+				periodFilter = `WHERE timeStamp >= ${start} AND timeStamp <= ${end}`;
+			}
+
+			let result: MerchantsInfo =
+			{
+				start: start,
+				end: end,
+				merchants: []
+			};
+
+			let cmd = `SELECT seller, COUNT(seller) as c, SUM(price) as s FROM sales ${periodFilter} GROUP BY seller ORDER BY c DESC LIMIT 10`;
+			let data = await connection.all(cmd);
+			for (let i = 0; i < data.length; ++i) {
+				let row = data[i];
+
+				let mi: MerchantInfo =
+				{
+					name: row.seller,
+					count: row.c,
+					sum: row.s
+				};
+
+				result.merchants.push(mi);
 			}
 
 			return result;

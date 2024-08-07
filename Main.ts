@@ -131,14 +131,11 @@ export class Main {
 
 				message += `${Utility.formatDateTime(d.timeStamp)}: `;
 
-				if (d.eventType == EpicHistoryEventType.Appeared)
-				{
+				if (d.eventType == EpicHistoryEventType.Appeared) {
 					message += `Appeared\n`;
-				} else if (d.leader == null)
-				{
+				} else if (d.leader == null) {
 					message += `Disappeared\n`;
-				} else
-				{
+				} else {
 					message += `Defeated by ${d.leader}'s group\n`;
 				}
 			}
@@ -150,7 +147,7 @@ export class Main {
 
 	fetchEpicHistory(channel: TextChannel, name: string): void {
 		this.fetchEpicHistoryAsync(channel, name).catch(err => this.logError(err));
-	}	
+	}
 
 	async fetchStatForAsync(channel: TextChannel, character: string): Promise<void> {
 		let mostDeadly = await Statistics.fetchStatFor(character);
@@ -235,7 +232,7 @@ export class Main {
 			let d = bestSellers.sales[i];
 			let roundedSize = Math.round(d.sum / d.count);
 
-			message += `${i + 1}. ${EmporiumProcessor.buildItemLink(d.item)} was sold ${d.count} times. Average price was ${roundedSize}.\n`;
+			message += `${i + 1}. ${EmporiumProcessor.buildItemLink(d.item)} was sold ${d.count} times. Average price was ${Utility.formatNumber(roundedSize)}.\n`;
 		}
 
 		this.logInfo(message);
@@ -244,6 +241,25 @@ export class Main {
 
 	fetchBestSellers(channel: TextChannel, period: PeriodType): void {
 		this.fetchBestSellersAsync(channel, period).catch(err => this.logError(err));
+	}
+
+	async fetchTopMerchantsAsync(channel: TextChannel, period: PeriodType): Promise<void> {
+		let topMerchants = await Statistics.fetchTopMerchants(period);
+
+		let message = `Top merchants rating from ${Utility.formatOnlyDate(topMerchants.start)} to ${Utility.formatOnlyDate(topMerchants.end)}.\n\n`;
+
+		for (let i = 0; i < topMerchants.merchants.length && i < this.RatingMaximum; ++i) {
+			let d = topMerchants.merchants[i];
+
+			message += `${i + 1}. ${EmporiumProcessor.buildItemLink(d.name)} sold ${d.count} items for the total amount of ${Utility.formatNumber(d.sum)} gold.\n`;
+		}
+
+		this.logInfo(message);
+		Utility.sendMessage(channel, message);
+	}
+
+	fetchTopMerchants(channel: TextChannel, period: PeriodType): void {
+		this.fetchTopMerchantsAsync(channel, period).catch(err => this.logError(err));
 	}
 
 	checkOwnership(user: string, adventurer: string, channel: TextChannel): boolean {
@@ -283,7 +299,7 @@ export class Main {
 	}
 
 	help(channel: TextChannel) {
-		let message = "I know following commands:\n!topdeaths [week|month|**year**|all]\n!mostdeadly [week|month|**year**|all]\n!topraisers [week|month|**year**|all]\n!gamestats [week|month|**year**|all]\n!bestsellers [week|month|**year**|all]\n!bestleaders\n!mostdeadlyfor player_name\n!statfor player_name\n!victimsof mobile_name\n!epichistory epic_name\n";
+		let message = "I know following commands:\n!topdeaths [week|month|**year**|all]\n!mostdeadly [week|month|**year**|all]\n!topraisers [week|month|**year**|all]\n!topmerchants [week|month|**year**|all]\n!gamestats [week|month|**year**|all]\n!bestsellers [week|month|**year**|all]\n!bestleaders\n!mostdeadlyfor player_name\n!statfor player_name\n!victimsof mobile_name\n!epichistory epic_name\n";
 
 		this.logInfo(message);
 		Utility.sendMessage(channel, message);
@@ -368,7 +384,10 @@ export class Main {
 			} else if (command == "bestsellers") {
 				let period = this.getPeriod(parts);
 				this.fetchBestSellers(channel, period);
-			}else if (command == "bestleaders") {
+			} else if (command == "topmerchants") {
+				let period = this.getPeriod(parts);
+				this.fetchTopMerchants(channel, period);
+			} else if (command == "bestleaders") {
 				this.fetchBestLeaders(channel);
 			} else if (command == "gamestats") {
 				let period = this.getPeriod(parts);
