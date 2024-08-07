@@ -251,7 +251,7 @@ export class Main {
 		for (let i = 0; i < topMerchants.merchants.length && i < this.RatingMaximum; ++i) {
 			let d = topMerchants.merchants[i];
 
-			message += `${i + 1}. ${EmporiumProcessor.buildItemLink(d.name)} sold ${d.count} items for the total amount of ${Utility.formatNumber(d.sum)} gold.\n`;
+			message += `${i + 1}. ${d.name} sold ${d.count} items for the total amount of ${Utility.formatNumber(d.sum)} gold.\n`;
 		}
 
 		this.logInfo(message);
