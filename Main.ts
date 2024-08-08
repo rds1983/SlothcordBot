@@ -1,19 +1,28 @@
-import { Client, GatewayIntentBits, Message, TextChannel } from "discord.js";
+import { Client, EmbedBuilder, GatewayIntentBits, Message, TextChannel } from "discord.js";
 import { AlertsProcessor } from "./AlertsProcessor";
 import { EmporiumProcessor } from "./EmporiumProcessor";
 import { EpicsProcessor } from "./EpicsProcessor";
 import { ForumProcessor } from "./ForumProcessor";
 import { Global } from "./Global";
 import { GroupsProcessor } from "./GroupsProcessor";
-import { EpicHistoryEventType, PeriodType, Statistics } from "./Statistics";
+import { EpicHistoryEventType, PeriodType, StatInfo, Statistics } from "./Statistics";
 import { LoggerWrapper } from "./LoggerWrapper";
-import { BaseProcessor } from "./BaseProcessor";
 import { Utility } from "./Utility";
+import { Table } from "embed-table";
 
 Global.config = require('./config.json');
 Global.usersToCharacters = require('./usersToCharacters.json');
 
 let s = Global.usersToCharacters;
+
+class TopStatInfo {
+	public name: string;
+	public deathsPlace: number;
+	public raisersPlace: number;
+	public leadersPlace: number;
+	public merchantsPlace: number;
+	public score: number;
+}
 
 export class Main {
 	private readonly RatingMaximum: number = 10;
@@ -262,6 +271,127 @@ export class Main {
 		this.fetchTopMerchantsAsync(channel, period).catch(err => this.logError(err));
 	}
 
+	getTopStatsFor(stats: { [name: string]: TopStatInfo }, name: string): TopStatInfo {
+		let stat: TopStatInfo = null;
+
+		if (!(name in stats)) {
+			stat = new TopStatInfo();
+			stat.name = name;
+			stat.deathsPlace = null;
+			stat.raisersPlace = null;
+			stat.leadersPlace = null;
+			stat.merchantsPlace = null;
+			stat.score = 0;
+			stats[stat.name] = stat;
+		} else {
+			stat = stats[name];
+		}
+
+		return stat;
+	}
+
+	formatPlace(header: string, place: number): string {
+		if (place == null) {
+			return "";
+		}
+
+		let result = ">" + header + ": ";
+
+		switch (place) {
+			case 0:
+				result += ":first_place:";
+				break;
+
+			case 1:
+				result += ":second_place:";
+				break;
+
+			case 2:
+				result += ":third_place:";
+				break;
+
+			default:
+				result += `${place + 1}th`;
+				break;
+		}
+
+		result += ` (${10 - place})\n`;
+
+		return result;
+	}
+
+	async fetchTopAsync(channel: TextChannel, period: PeriodType): Promise<void> {
+		let deaths = await Statistics.fetchTopDeaths(period);
+		let raisers = await Statistics.fetchTopRaisers(period);
+		let leaders = await Statistics.fetchBestLeaders(period);
+		let merchants = await Statistics.fetchTopMerchants(period);
+
+		let stats: { [name: string]: TopStatInfo } = {};
+		for (let i = 0; i < deaths.players.length && i < this.RatingMaximum; ++i) {
+			let d = deaths.players[i];
+			let stat = this.getTopStatsFor(stats, d.name);
+
+			stat.deathsPlace = i;
+			stat.score += (10 - i);
+		}
+
+		for (let i = 0; i < raisers.raisers.length && i < this.RatingMaximum; ++i) {
+			let d = raisers.raisers[i];
+			let stat = this.getTopStatsFor(stats, d.name);
+
+			stat.raisersPlace = i;
+			stat.score += (10 - i);
+		}
+
+		for (let i = 0; i < leaders.leaders.length && i < this.RatingMaximum; ++i) {
+			let d = leaders.leaders[i];
+			let stat = this.getTopStatsFor(stats, d.name);
+
+			stat.leadersPlace = i;
+			stat.score += (10 - i);
+		}
+
+		for (let i = 0; i < merchants.merchants.length && i < this.RatingMaximum; ++i) {
+			let d = merchants.merchants[i];
+			let stat = this.getTopStatsFor(stats, d.name);
+
+			stat.merchantsPlace = i;
+			stat.score += (10 - i);
+		}
+
+		// Sort by score
+		var sortableArray = Object.entries(stats);
+		var sortedArray = sortableArray.sort(([, a], [, b]) => b.score - a.score);
+
+		let message = `Top rating from ${Utility.formatOnlyDate(deaths.start)} to ${Utility.formatOnlyDate(deaths.end)}.\n\n`;
+
+		const embed = new EmbedBuilder().setDescription(message);
+
+		for (let i = 0; i < sortedArray.length && i < this.RatingMaximum; ++i) {
+			let d = sortedArray[i][1];
+
+			let value = "";
+
+			value += this.formatPlace("Deaths", d.deathsPlace);
+			value += this.formatPlace("Raisers", d.raisersPlace);
+			value += this.formatPlace("Leaders", d.leadersPlace);
+			value += this.formatPlace("Merchants", d.merchantsPlace);
+
+			value += `>Score: ${d.score}\n`;
+
+			embed.addFields({
+				name: `${i + 1}. ${d.name}`,
+				value: value
+			});
+		}
+
+		Utility.sendEmbed(channel, embed);
+	}
+
+	fetchTop(channel: TextChannel, period: PeriodType): void {
+		this.fetchTopAsync(channel, period).catch(err => this.logError(err));
+	}
+
 	checkOwnership(user: string, adventurer: string, channel: TextChannel): boolean {
 		let charOwned = 0;
 		if (user.toLowerCase() == adventurer.toLowerCase()) {
@@ -390,6 +520,9 @@ export class Main {
 			} else if (command == "bestleaders") {
 				let period = this.getPeriod(parts);
 				this.fetchBestLeaders(channel, period);
+			} else if (command == "top") {
+				let period = this.getPeriod(parts);
+				this.fetchTop(channel, period);
 			} else if (command == "gamestats") {
 				let period = this.getPeriod(parts);
 				this.fetchGameStats(channel, period);

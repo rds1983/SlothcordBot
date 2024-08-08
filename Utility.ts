@@ -1,5 +1,5 @@
 
-import { Channel, EmbedBuilder, Message, TextChannel } from "discord.js";
+import { EmbedBuilder, Message, TextChannel } from "discord.js";
 import moment from "moment";
 import { Logger } from "winston";
 
@@ -37,11 +37,9 @@ export class Utility {
 	}
 
 	static toString(obj: any) {
-		if (typeof obj == "string")
-		{
+		if (typeof obj == "string") {
 			return obj;
-		} else if (obj instanceof Error)
-		{
+		} else if (obj instanceof Error) {
 			return obj.message;
 		}
 
@@ -81,11 +79,15 @@ export class Utility {
 
 	static formatDateTime(value: number) {
 		return moment.unix(value).format("MMMM Do YYYY, HH:mm");
-	}	
+	}
+
+	static async sendEmbed(channel: TextChannel, message: EmbedBuilder): Promise<Message<true>> {
+		return channel.send({ embeds: [message] });
+	}
 
 	static async sendMessage(channel: TextChannel, message: string): Promise<Message<true>> {
 		const embed = new EmbedBuilder().setDescription(message);
-		return channel.send({ embeds: [embed] });
+		return this.sendEmbed(channel, embed);
 	}
 }
 
