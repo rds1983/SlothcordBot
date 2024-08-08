@@ -8,7 +8,6 @@ import { GroupsProcessor } from "./GroupsProcessor";
 import { EpicHistoryEventType, PeriodType, StatInfo, Statistics } from "./Statistics";
 import { LoggerWrapper } from "./LoggerWrapper";
 import { Utility } from "./Utility";
-import { Table } from "embed-table";
 
 Global.config = require('./config.json');
 Global.usersToCharacters = require('./usersToCharacters.json');
