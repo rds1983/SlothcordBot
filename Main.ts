@@ -185,8 +185,8 @@ export class Main {
 		this.fetchTopRaisersAsync(channel, period).catch(err => this.logError(err));
 	}
 
-	async fetchBestLeadersAsync(channel: TextChannel): Promise<void> {
-		let bestLeaders = await Statistics.fetchBestLeaders();
+	async fetchBestLeadersAsync(channel: TextChannel, period: PeriodType): Promise<void> {
+		let bestLeaders = await Statistics.fetchBestLeaders(period);
 
 		let message = `Best leaders rating from ${Utility.formatOnlyDate(bestLeaders.start)} to ${Utility.formatOnlyDate(bestLeaders.end)}.\n\n`;
 
@@ -201,8 +201,8 @@ export class Main {
 		Utility.sendMessage(channel, message);
 	}
 
-	fetchBestLeaders(channel: TextChannel): void {
-		this.fetchBestLeadersAsync(channel).catch(err => this.logError(err));
+	fetchBestLeaders(channel: TextChannel, period: PeriodType): void {
+		this.fetchBestLeadersAsync(channel, period).catch(err => this.logError(err));
 	}
 
 	async fetchGameStatsAsync(channel: TextChannel, period: PeriodType): Promise<void> {
@@ -299,7 +299,7 @@ export class Main {
 	}
 
 	help(channel: TextChannel) {
-		let message = "I know following commands:\n!topdeaths [week|month|**year**|all]\n!mostdeadly [week|month|**year**|all]\n!topraisers [week|month|**year**|all]\n!topmerchants [week|month|**year**|all]\n!gamestats [week|month|**year**|all]\n!bestsellers [week|month|**year**|all]\n!bestleaders\n!mostdeadlyfor player_name\n!statfor player_name\n!victimsof mobile_name\n!epichistory epic_name\n";
+		let message = "I know following commands:\n!topdeaths [week|month|**year**|all]\n!topraisers [week|month|**year**|all]\n!bestleaders [week|month|**year**|all]\n!topmerchants [week|month|**year**|all]\n!mostdeadly [week|month|**year**|all]\n!gamestats [week|month|**year**|all]\n!bestsellers [week|month|**year**|all]\n!mostdeadlyfor player_name\n!statfor player_name\n!victimsof mobile_name\n!epichistory epic_name\n";
 
 		this.logInfo(message);
 		Utility.sendMessage(channel, message);
@@ -388,7 +388,8 @@ export class Main {
 				let period = this.getPeriod(parts);
 				this.fetchTopMerchants(channel, period);
 			} else if (command == "bestleaders") {
-				this.fetchBestLeaders(channel);
+				let period = this.getPeriod(parts);
+				this.fetchBestLeaders(channel, period);
 			} else if (command == "gamestats") {
 				let period = this.getPeriod(parts);
 				this.fetchGameStats(channel, period);

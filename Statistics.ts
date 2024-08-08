@@ -779,15 +779,22 @@ export class Statistics {
 		}
 	}
 
-	private static async fetchRealGroups(connection: Database): Promise<RealGroupsInfo> {
+	private static async fetchRealGroups(connection: Database, period: PeriodType): Promise<RealGroupsInfo> {
+		let [start, end] = await this.getStartEnd(connection, period);
+
+		let periodFilter = "";
+		if (period != PeriodType.AllTime) {
+			periodFilter = `AND started >= ${start} AND finished <= ${end}`;
+		}
+
 		// Fetch all data
-		let cmd = `SELECT leader, size, started, finished FROM groups WHERE size > 2 ORDER BY id`;
+		let cmd = `SELECT leader, size, started, finished FROM groups WHERE size > 2 ${periodFilter} ORDER BY id`;
 		let data = await connection.all(cmd);
 
 		// First run: group all data by real groups
 		let realGroups: RealGroup[] = [];
-		let start: number = null;
-		let end: number = null;
+		let groupStart: number = null;
+		let groupEnd: number = null;
 		for (let i = 0; i < data.length; ++i) {
 			let row = data[i];
 
@@ -796,12 +803,12 @@ export class Statistics {
 				continue;
 			}
 
-			if (start == null || row.started < start) {
-				start = row.started;
+			if (groupStart == null || row.started < groupStart) {
+				groupStart = row.started;
 			}
 
-			if (end == null || row.finished > end) {
-				end = row.finished;
+			if (groupEnd == null || row.finished > groupEnd) {
+				groupEnd = row.finished;
 			}
 
 			// Find the group this row could be continuation of
@@ -826,22 +833,22 @@ export class Statistics {
 		}
 
 		let result: RealGroupsInfo = {
-			start: start,
-			end: end,
+			start: groupStart,
+			end: groupEnd,
 			realGroups: realGroups
 		}
 
 		return result;
 	}
 
-	public static async fetchBestLeaders(): Promise<BestLeadersInfo> {
+	public static async fetchBestLeaders(period: PeriodType): Promise<BestLeadersInfo> {
 		let connection: Database = null;
 
 		try {
 			connection = await this.openDb();
 
 			// First run: group all data by real groups
-			let realGroups = await this.fetchRealGroups(connection);
+			let realGroups = await this.fetchRealGroups(connection, period);
 
 			// Second run: build up statistics
 			let stats: { [leader: string]: LeaderInfo } = {};
@@ -977,7 +984,7 @@ export class Statistics {
 
 			result.adventurersRaisesCount = data[0].c;
 
-			let realGroups = await this.fetchRealGroups(connection);
+			let realGroups = await this.fetchRealGroups(connection, period);
 			if (period != PeriodType.AllTime) {
 				for (let i = 0; i < realGroups.realGroups.length; ++i) {
 					let realGroup = realGroups.realGroups[i];
