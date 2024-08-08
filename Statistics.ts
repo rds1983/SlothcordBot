@@ -371,24 +371,32 @@ export class Statistics {
 		return Utility.toUnixTimeStamp(start);
 	}
 
+	private static async getStartEnd(connection: Database, period: PeriodType): Promise<[number, number]>
+	{
+		let start = 0;
+		let end = 0;
+
+		if (period == PeriodType.AllTime) {
+			[start, end] = await this.fetchStartEndFromAlerts(connection);
+		} else {
+			start = this.buildPeriodFilter(period);
+			end = Utility.getUnixTimeStamp();
+		}
+
+		return [start, end];
+	}
+
 	public static async fetchTopDeaths(period: PeriodType): Promise<TopDeathsInfo> {
 		let connection: Database = null;
 
 		try {
 			connection = await this.openDb();
 
-			let start = 0;
-			let end = 0;
+			let [start, end] = await this.getStartEnd(connection, period);
+
 			let periodFilter = "";
-
-
-			if (period == PeriodType.AllTime) {
-				[start, end] = await this.fetchStartEndFromAlerts(connection);
-			} else {
-				start = this.buildPeriodFilter(period);
-				end = Utility.getUnixTimeStamp();
+			if (period != PeriodType.AllTime) {
 				periodFilter = `AND timeStamp >= ${start} AND timeStamp <= ${end}`;
-
 			}
 
 			let result: TopDeathsInfo =
@@ -431,15 +439,10 @@ export class Statistics {
 		try {
 			connection = await this.openDb();
 
-			let start = 0;
-			let end = 0;
-			let periodFilter = "";
+			let [start, end] = await this.getStartEnd(connection, period);
 
-			if (period == PeriodType.AllTime) {
-				[start, end] = await this.fetchStartEndFromAlerts(connection);
-			} else {
-				start = this.buildPeriodFilter(period);
-				end = Utility.getUnixTimeStamp();
+			let periodFilter = "";
+			if (period != PeriodType.AllTime) {
 				periodFilter = `WHERE timeStamp >= ${start} AND timeStamp <= ${end}`;
 			}
 
@@ -739,15 +742,10 @@ export class Statistics {
 		try {
 			connection = await this.openDb();
 
-			let start = 0;
-			let end = 0;
-			let periodFilter = "";
+			let [start, end] = await this.getStartEnd(connection, period);
 
-			if (period == PeriodType.AllTime) {
-				[start, end] = await this.fetchStartEndFromAlerts(connection);
-			} else {
-				start = this.buildPeriodFilter(period);
-				end = Utility.getUnixTimeStamp();
+			let periodFilter = "";
+			if (period != PeriodType.AllTime) {
 				periodFilter = `AND timeStamp >= ${start} AND timeStamp <= ${end}`;
 			}
 
@@ -937,16 +935,11 @@ export class Statistics {
 
 			connection = await this.openDb();
 
-			let start = 0;
-			let end = 0;
 			let periodFilter = "";
 			let periodFilterWithoutAnd = "";
+			let [start, end] = await this.getStartEnd(connection, period);
 
-			if (period == PeriodType.AllTime) {
-				[start, end] = await this.fetchStartEndFromAlerts(connection);
-			} else {
-				start = this.buildPeriodFilter(period);
-				end = Utility.getUnixTimeStamp();
+			if (period != PeriodType.AllTime) {
 				let str = `timeStamp >= ${start} AND timeStamp <= ${end}`;
 				periodFilter = `AND ${str}`;
 				periodFilterWithoutAnd = `WHERE ${str}`;
@@ -1087,15 +1080,10 @@ export class Statistics {
 		try {
 			connection = await this.openDb();
 
-			let start = 0;
-			let end = 0;
-			let periodFilter = "";
+			let [start, end] = await this.getStartEnd(connection, period);
 
-			if (period == PeriodType.AllTime) {
-				[start, end] = await this.fetchStartEndFromAlerts(connection);
-			} else {
-				start = this.buildPeriodFilter(period);
-				end = Utility.getUnixTimeStamp();
+			let periodFilter = "";
+			if (period != PeriodType.AllTime) {
 				periodFilter = `WHERE timeStamp >= ${start} AND timeStamp <= ${end}`;
 			}
 
