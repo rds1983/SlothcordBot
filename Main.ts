@@ -315,7 +315,7 @@ export class Main {
 				break;
 		}
 
-		result += ` (${10 - place})\n`;
+		result += ` (Score: ${10 - place})\n`;
 
 		return result;
 	}
@@ -377,7 +377,7 @@ export class Main {
 			value += this.formatPlace("Leaders", d.leadersPlace);
 			value += this.formatPlace("Merchants", d.merchantsPlace);
 
-			value += `>Score: ${d.score}\n`;
+			value += `>Total Score: ${d.score}\n`;
 
 			embed.addFields({
 				name: `${i + 1}. ${d.name}`,
