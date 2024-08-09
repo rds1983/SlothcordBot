@@ -451,7 +451,7 @@ export class Main {
 	}
 
 	help(channel: TextChannel) {
-		let message = "I know following commands:\n!topdeaths [week|month|**year**|all]\n!topraisers [week|month|**year**|all]\n!bestleaders [week|month|**year**|all]\n!topmerchants [week|month|**year**|all]\n!top [week|month|**year**|all]\n!mostdeadly [week|month|**year**|all]\n!gamestats [week|month|**year**|all]\n!bestsellers [week|month|**year**|all]\n!mostdeadlyfor player_name\n!statfor player_name\n!victimsof mobile_name\n!epichistory epic_name\n";
+		let message = "I know following commands:\n!topdeaths [week|month|**year**|all]\n!topraisers [week|month|**year**|all]\n!bestleaders [week|month|**year**|all]\n!topmerchants [week|month|**year**|all]\n!top [week|month|**year**|all]\n!mostdeadly [week|month|**year**|all]\n!gamestats [week|month|**year**|all]\n!bestsellers [week|month|**year**|all]\n!mostdeadlyfor player_name\n!statfor player_name [week|month|**year**|all]\n!victimsof mobile_name\n!epichistory epic_name\n";
 
 		this.logInfo(message);
 		Utility.sendMessage(channel, message);
