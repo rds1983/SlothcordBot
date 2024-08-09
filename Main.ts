@@ -332,12 +332,12 @@ export class Main {
 		return stat;
 	}
 
-	formatPlace2(header: string, place: number): string {
+	formatPlace2(header: string, place: number, k = 1): string {
 		if (place == null) {
 			return "";
 		}
 
-		let result = `> ${header}: ${this.formatPlace(place)} (Score: ${10 - place})\n`;
+		let result = `> ${header}: ${this.formatPlace(place)} (Score: ${(10 - place) * k})\n`;
 
 		return result;
 	}
@@ -370,7 +370,7 @@ export class Main {
 			let stat = this.getTopStatsFor(stats, d.name);
 
 			stat.leadersPlace = i;
-			stat.score += (10 - i);
+			stat.score += 2 * (10 - i);
 		}
 
 		for (let i = 0; i < merchants.merchants.length && i < this.RatingMaximum; ++i) {
@@ -396,7 +396,7 @@ export class Main {
 
 			value += this.formatPlace2("Deaths", d.deathsPlace);
 			value += this.formatPlace2("Raisers", d.raisersPlace);
-			value += this.formatPlace2("Leaders", d.leadersPlace);
+			value += this.formatPlace2("Leaders", d.leadersPlace, 2);
 			value += this.formatPlace2("Merchants", d.merchantsPlace);
 
 			value += `> Total Score: ${d.score}\n`;
