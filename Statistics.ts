@@ -49,9 +49,12 @@ export class MostDeadlyInfo2 extends BaseInfo {
 
 export class StatForInfo extends BaseInfo {
 	public deathsCount: number;
+	public deathsPlace: number;
 	public wereRaisedCount: number;
 	public raisedSomeoneCount: number;
+	public raisersPlace: number;
 	public salesCount: number;
+	public merchantsPlace: number;
 	public salesSum: string;
 }
 
@@ -371,8 +374,7 @@ export class Statistics {
 		return Utility.toUnixTimeStamp(start);
 	}
 
-	private static async getStartEnd(connection: Database, period: PeriodType): Promise<[number, number]>
-	{
+	private static async getStartEnd(connection: Database, period: PeriodType): Promise<[number, number]> {
 		let start = 0;
 		let end = 0;
 
@@ -687,43 +689,89 @@ export class Statistics {
 		}
 	}
 
-	public static async fetchStatFor(character: string): Promise<StatForInfo> {
+	public static async fetchStatFor(character: string, period: PeriodType): Promise<StatForInfo> {
 		let connection: Database = null;
 
 		try {
+			character = character.toLowerCase();
 			connection = await this.openDb();
 
-			let [start, end] = await this.fetchStartEndFromAlerts(connection);
+			let [start, end] = await this.getStartEnd(connection, period);
 
-			let cmd = `SELECT COUNT(id) AS c FROM alerts WHERE type = 0 AND adventurer = '${character}' COLLATE NOCASE`;
+			let periodFilter = "";
+			let periodFilter2 = "";
+			if (period != PeriodType.AllTime) {
+				let str = `timeStamp >= ${start} AND timeStamp <= ${end}`;
+				periodFilter = `AND ${str}`;
+				periodFilter2 = `WHERE ${str}`;
+			}
+
+			let cmd = `SELECT COUNT(id) AS c FROM alerts WHERE type = 0 AND adventurer = '${character}' COLLATE NOCASE ${periodFilter}`;
 			let data = await connection.all(cmd);
-
 			let deathsCount = data[0].c;
 
-			cmd = `SELECT COUNT(id) AS c FROM alerts WHERE type = 1 AND adventurer = '${character}' COLLATE NOCASE`;
+			cmd = `SELECT adventurer, COUNT(adventurer) AS c FROM alerts WHERE type = 0 ${periodFilter} GROUP BY adventurer ORDER BY c DESC LIMIT 100`;
 			data = await connection.all(cmd);
+			let deathsPlace = null;
+			for (let i = 0; i < data.length; ++i) {
+				let row = data[i];
 
+				if (row.adventurer.toLowerCase() == character) {
+					deathsPlace = i;
+					break;
+				}
+			}
+
+
+			cmd = `SELECT COUNT(id) AS c FROM alerts WHERE type = 1 AND adventurer = '${character}' COLLATE NOCASE ${periodFilter}`;
+			data = await connection.all(cmd);
 			let wereRaisedCount = data[0].c;
 
-			cmd = `SELECT COUNT(id) AS c FROM alerts WHERE type = 1 AND doer = '${character}' COLLATE NOCASE`;
+			cmd = `SELECT COUNT(id) AS c FROM alerts WHERE type = 1 AND doer = '${character}' COLLATE NOCASE ${periodFilter}`;
 			data = await connection.all(cmd);
-
 			let raisedSomeoneCount = data[0].c;
 
-			cmd = `SELECT COUNT(id) as c, SUM(price) AS s FROM sales WHERE seller = '${character}' COLLATE NOCASE`;
+			cmd = `SELECT doer, COUNT(doer) AS c FROM alerts WHERE type = 1 ${periodFilter} GROUP BY doer ORDER BY c DESC LIMIT 100`;
 			data = await connection.all(cmd);
+			let raisersPlace = null;
+			for (let i = 0; i < data.length; ++i) {
+				let row = data[i];
 
+				if (row.doer.toLowerCase() == character) {
+					raisersPlace = i;
+					break;
+				}
+			}
+
+
+			cmd = `SELECT COUNT(id) as c, SUM(price) AS s FROM sales WHERE seller = '${character}' COLLATE NOCASE ${periodFilter}`;
+			data = await connection.all(cmd);
 			let salesCount = data[0].c;
 			let salesSum = data[0].s != null ? Utility.formatNumber(data[0].s) : "0";
+
+			cmd = `SELECT seller, COUNT(seller) as c, SUM(price) as s FROM sales ${periodFilter2} GROUP BY seller ORDER BY c DESC LIMIT 100`;
+			data = await connection.all(cmd);
+			let merchantsPlace = null;
+			for (let i = 0; i < data.length; ++i) {
+				let row = data[i];
+
+				if (row.seller.toLowerCase() == character) {
+					merchantsPlace = i;
+					break;
+				}
+			}
 
 			let result: StatForInfo =
 			{
 				start: start,
 				end: end,
 				deathsCount: deathsCount,
+				deathsPlace: deathsPlace,
 				wereRaisedCount: wereRaisedCount,
 				raisedSomeoneCount: raisedSomeoneCount,
+				raisersPlace: raisersPlace,
 				salesCount: salesCount,
+				merchantsPlace: merchantsPlace,
 				salesSum: salesSum
 			};
 

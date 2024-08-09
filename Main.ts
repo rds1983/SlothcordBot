@@ -157,22 +157,65 @@ export class Main {
 		this.fetchEpicHistoryAsync(channel, name).catch(err => this.logError(err));
 	}
 
-	async fetchStatForAsync(channel: TextChannel, character: string): Promise<void> {
-		let mostDeadly = await Statistics.fetchStatFor(character);
+	formatPlace(place: number): string {
+		if (place == null) {
+			return "";
+		}
 
-		let message = `Statistics for ${character} from ${Utility.formatOnlyDate(mostDeadly.start)} to ${Utility.formatOnlyDate(mostDeadly.end)}.\n\n`;
+		let result = "";
 
-		message += `You died ${mostDeadly.deathsCount} times.\n`;
-		message += `You were raised ${mostDeadly.wereRaisedCount} times.\n`;
-		message += `You raised someone ${mostDeadly.raisedSomeoneCount} times.\n`;
-		message += `You sold ${mostDeadly.salesCount} items for ${mostDeadly.salesSum} gold coins at the auction.\n`;
+		switch (place) {
+			case 0:
+				result = ":first_place:";
+				break;
+
+			case 1:
+				result = ":second_place:";
+				break;
+
+			case 2:
+				result = ":third_place:";
+				break;
+
+			default:
+				result = `${place + 1}th`;
+				break;
+		}
+
+		return result;
+	}	
+
+	async fetchStatForAsync(channel: TextChannel, character: string, period: PeriodType): Promise<void> {
+		let statFor = await Statistics.fetchStatFor(character, period);
+
+		let message = `Statistics for ${character} from ${Utility.formatOnlyDate(statFor.start)} to ${Utility.formatOnlyDate(statFor.end)}.\n\n`;
+
+		message += `You died ${statFor.deathsCount} times`;
+		if (statFor.deathsPlace != null) {
+			message += ` (${this.formatPlace(statFor.deathsPlace)})`;
+		}
+		message += ".\n";
+
+		message += `You were raised ${statFor.wereRaisedCount} times.\n`;
+
+		message += `You raised someone ${statFor.raisedSomeoneCount} times`;
+		if (statFor.raisersPlace != null) {
+			message += ` (${this.formatPlace(statFor.raisersPlace)})`;
+		}
+		message += ".\n";
+
+		message += `You sold ${statFor.salesCount} items for ${statFor.salesSum} gold coins at the auction`;
+		if (statFor.merchantsPlace != null) {
+			message += ` (${this.formatPlace(statFor.merchantsPlace)})`;
+		}
+		message += ".\n";
 
 		this.logInfo(message);
 		Utility.sendMessage(channel, message);
 	}
 
-	fetchStatFor(channel: TextChannel, character: string): void {
-		this.fetchStatForAsync(channel, character).catch(err => this.logError(err));
+	fetchStatFor(channel: TextChannel, character: string, period: PeriodType): void {
+		this.fetchStatForAsync(channel, character, period).catch(err => this.logError(err));
 	}
 
 	async fetchTopRaisersAsync(channel: TextChannel, period: PeriodType): Promise<void> {
@@ -289,32 +332,12 @@ export class Main {
 		return stat;
 	}
 
-	formatPlace(header: string, place: number): string {
+	formatPlace2(header: string, place: number): string {
 		if (place == null) {
 			return "";
 		}
 
-		let result = ">" + header + ": ";
-
-		switch (place) {
-			case 0:
-				result += ":first_place:";
-				break;
-
-			case 1:
-				result += ":second_place:";
-				break;
-
-			case 2:
-				result += ":third_place:";
-				break;
-
-			default:
-				result += `${place + 1}th`;
-				break;
-		}
-
-		result += ` (Score: ${10 - place})\n`;
+		let result = `> ${header}: ${this.formatPlace(place)} (Score: ${10 - place})\n`;
 
 		return result;
 	}
@@ -371,12 +394,12 @@ export class Main {
 
 			let value = "";
 
-			value += this.formatPlace("Deaths", d.deathsPlace);
-			value += this.formatPlace("Raisers", d.raisersPlace);
-			value += this.formatPlace("Leaders", d.leadersPlace);
-			value += this.formatPlace("Merchants", d.merchantsPlace);
+			value += this.formatPlace2("Deaths", d.deathsPlace);
+			value += this.formatPlace2("Raisers", d.raisersPlace);
+			value += this.formatPlace2("Leaders", d.leadersPlace);
+			value += this.formatPlace2("Merchants", d.merchantsPlace);
 
-			value += `>Total Score: ${d.score}\n`;
+			value += `> Total Score: ${d.score}\n`;
 
 			embed.addFields({
 				name: `${i + 1}. ${d.name}`,
@@ -428,21 +451,22 @@ export class Main {
 	}
 
 	help(channel: TextChannel) {
-		let message = "I know following commands:\n!topdeaths [week|month|**year**|all]\n!topraisers [week|month|**year**|all]\n!bestleaders [week|month|**year**|all]\n!topmerchants [week|month|**year**|all]\n!mostdeadly [week|month|**year**|all]\n!gamestats [week|month|**year**|all]\n!bestsellers [week|month|**year**|all]\n!mostdeadlyfor player_name\n!statfor player_name\n!victimsof mobile_name\n!epichistory epic_name\n";
+		let message = "I know following commands:\n!topdeaths [week|month|**year**|all]\n!topraisers [week|month|**year**|all]\n!bestleaders [week|month|**year**|all]\n!topmerchants [week|month|**year**|all]\n!top [week|month|**year**|all]\n!mostdeadly [week|month|**year**|all]\n!gamestats [week|month|**year**|all]\n!bestsellers [week|month|**year**|all]\n!mostdeadlyfor player_name\n!statfor player_name\n!victimsof mobile_name\n!epichistory epic_name\n";
 
 		this.logInfo(message);
 		Utility.sendMessage(channel, message);
 	}
 
-	getPeriod(parts: string[]): PeriodType {
+	getPeriod(parts: string[], index = 1): PeriodType {
 		let result = PeriodType.Year;
 
-		if (parts.length > 1) {
-			if (parts[1] == "week") {
+		if (parts.length > index) {
+			let arg = parts[index];
+			if (arg == "week") {
 				result = PeriodType.Week;
-			} else if (parts[1] == "month") {
+			} else if (arg == "month") {
 				result = PeriodType.Month;
-			} else if (parts[1] == "all") {
+			} else if (arg == "all") {
 				result = PeriodType.AllTime;
 			}
 		}
@@ -527,14 +551,15 @@ export class Main {
 				this.fetchGameStats(channel, period);
 			} else if (command.startsWith("statfor") || command.startsWith("statsfor")) {
 				let parts = content.split(' ');
-				if (parts.length != 2) {
+				if (parts.length < 2) {
 					Utility.sendMessage(channel, "Usage: !statfor adventurer_name");
 				} else {
 					let user = msg.author.username;
 					let adventurer = parts[1];
+					let period = this.getPeriod(parts, 2);
 
 					if (this.checkOwnership(user, adventurer, channel)) {
-						this.fetchStatFor(channel, adventurer);
+						this.fetchStatFor(channel, adventurer, period);
 					}
 				}
 			}
