@@ -45,6 +45,30 @@ export class Main {
 		this.loggerWrapper.logInfo(message);
 	}
 
+	formatPlaceWithMedal(place: number): string {
+		if (place == null) {
+			return "";
+		}
+
+		let result = `${place + 1}. `;
+
+		switch (place) {
+			case 0:
+				result += ":first_place: ";
+				break;
+
+			case 1:
+				result += ":second_place: ";
+				break;
+
+			case 2:
+				result += ":third_place: ";
+				break;
+		}
+
+		return result;
+	}	
+
 	async fetchTopDeathsAsync(channel: TextChannel, period: PeriodType): Promise<void> {
 		let topDeaths = await Statistics.fetchTopDeaths(period);
 
@@ -53,7 +77,7 @@ export class Main {
 		for (let i = 0; i < topDeaths.players.length && i < this.RatingMaximum; ++i) {
 			let pd = topDeaths.players[i];
 			let raiseRate = Math.round(pd.raises * 100.0 / pd.count);
-			message += `${i + 1}. ${pd.name} died ${pd.count} times. Was raised ${pd.raises} times (${raiseRate}%).\n`;
+			message += `${this.formatPlaceWithMedal(i)}${pd.name} died ${pd.count} times. Was raised ${pd.raises} times (${raiseRate}%).\n`;
 		}
 
 		this.logInfo(message);
@@ -72,7 +96,7 @@ export class Main {
 		for (let i = 0; i < mostDeadly.deadlies.length && i < this.RatingMaximum; ++i) {
 			let d = mostDeadly.deadlies[i];
 			let raiseRate = Math.round(d.raises * 100.0 / d.count);
-			message += `${i + 1}. ${d.name} killed ${d.count} times. Raised ${d.raises} times (${raiseRate}%).\n`;
+			message += `${this.formatPlaceWithMedal(i)}${d.name} killed ${d.count} times. Raised ${d.raises} times (${raiseRate}%).\n`;
 		}
 
 		this.logInfo(message);
@@ -90,7 +114,7 @@ export class Main {
 
 		for (let i = 0; i < mostDeadly.deadlies.length && i < this.RatingMaximum; ++i) {
 			let d = mostDeadly.deadlies[i];
-			message += `${i + 1}. ${d.name} killed you ${d.count} times.\n`;
+			message += `${this.formatPlaceWithMedal(i)}${d.name} killed you ${d.count} times.\n`;
 		}
 
 		this.logInfo(message);
@@ -113,7 +137,7 @@ export class Main {
 
 			for (let i = 0; i < victimsOf.deadlies.length && i < this.RatingMaximum; ++i) {
 				let d = victimsOf.deadlies[i];
-				message += `${i + 1}. Killed ${d.name} ${d.count} times.\n`;
+				message += `${this.formatPlaceWithMedal(i)}Killed ${d.name} ${d.count} times.\n`;
 			}
 		}
 
@@ -225,7 +249,7 @@ export class Main {
 
 		for (let i = 0; i < topRaisers.raisers.length && i < this.RatingMaximum; ++i) {
 			let d = topRaisers.raisers[i];
-			message += `${i + 1}. ${d.name} raised ${d.count} times.\n`;
+			message += `${this.formatPlaceWithMedal(i)}${d.name} raised ${d.count} times.\n`;
 		}
 
 		this.logInfo(message);
@@ -245,7 +269,7 @@ export class Main {
 			let d = bestLeaders.leaders[i];
 			let roundedSize = Math.round(d.totalSize / d.groupsCount);
 
-			message += `${i + 1}. ${d.name} led ${d.realGroupsCount} groups. Average group size was ${roundedSize}. Overall score is ${Utility.formatNumber(d.score)}.\n`;
+			message += `${this.formatPlaceWithMedal(i)}${d.name} led ${d.realGroupsCount} groups. Average group size was ${roundedSize}. Overall score is ${Utility.formatNumber(d.score)}.\n`;
 		}
 
 		this.logInfo(message);
@@ -283,7 +307,7 @@ export class Main {
 			let d = bestSellers.sales[i];
 			let roundedSize = Math.round(d.sum / d.count);
 
-			message += `${i + 1}. ${EmporiumProcessor.buildItemLink(d.item)} was sold ${d.count} times. Average price was ${Utility.formatNumber(roundedSize)}.\n`;
+			message += `${this.formatPlaceWithMedal(i)}${EmporiumProcessor.buildItemLink(d.item)} was sold ${d.count} times. Average price was ${Utility.formatNumber(roundedSize)}.\n`;
 		}
 
 		this.logInfo(message);
@@ -294,23 +318,23 @@ export class Main {
 		this.fetchBestSellersAsync(channel, period).catch(err => this.logError(err));
 	}
 
-	async fetchTopMerchantsAsync(channel: TextChannel, period: PeriodType): Promise<void> {
-		let topMerchants = await Statistics.fetchTopMerchants(period);
+	async fetchTopMerchantsAsync(channel: TextChannel, period: PeriodType, orderBySum: boolean): Promise<void> {
+		let topMerchants = await Statistics.fetchTopMerchants(period, orderBySum);
 
 		let message = `Top merchants rating from ${Utility.formatOnlyDate(topMerchants.start)} to ${Utility.formatOnlyDate(topMerchants.end)}.\n\n`;
 
 		for (let i = 0; i < topMerchants.merchants.length && i < this.RatingMaximum; ++i) {
 			let d = topMerchants.merchants[i];
 
-			message += `${i + 1}. ${d.name} sold ${d.count} items for the total amount of ${Utility.formatNumber(d.sum)} gold.\n`;
+			message += `${this.formatPlaceWithMedal(i)}${d.name} sold ${d.count} items for the total amount of ${Utility.formatNumber(d.sum)} gold.\n`;
 		}
 
 		this.logInfo(message);
 		Utility.sendMessage(channel, message);
 	}
 
-	fetchTopMerchants(channel: TextChannel, period: PeriodType): void {
-		this.fetchTopMerchantsAsync(channel, period).catch(err => this.logError(err));
+	fetchTopMerchants(channel: TextChannel, period: PeriodType, orderBySum: boolean): void {
+		this.fetchTopMerchantsAsync(channel, period, orderBySum).catch(err => this.logError(err));
 	}
 
 	getTopStatsFor(stats: { [name: string]: TopStatInfo }, name: string): TopStatInfo {
@@ -346,7 +370,7 @@ export class Main {
 		let deaths = await Statistics.fetchTopDeaths(period);
 		let raisers = await Statistics.fetchTopRaisers(period);
 		let leaders = await Statistics.fetchBestLeaders(period);
-		let merchants = await Statistics.fetchTopMerchants(period);
+		let merchants = await Statistics.fetchTopMerchants(period, false);
 
 		let stats: { [name: string]: TopStatInfo } = {};
 		for (let i = 0; i < deaths.players.length && i < this.RatingMaximum; ++i) {
@@ -402,7 +426,7 @@ export class Main {
 			value += `> Total Score: ${d.score}\n`;
 
 			embed.addFields({
-				name: `${i + 1}. ${d.name}`,
+				name: `${this.formatPlaceWithMedal(i)}${d.name}`,
 				value: value
 			});
 		}
@@ -451,7 +475,7 @@ export class Main {
 	}
 
 	help(channel: TextChannel) {
-		let message = "I know following commands:\n!topdeaths [week|month|**year**|all]\n!topraisers [week|month|**year**|all]\n!bestleaders [week|month|**year**|all]\n!topmerchants [week|month|**year**|all]\n!top [week|month|**year**|all]\n!mostdeadly [week|month|**year**|all]\n!gamestats [week|month|**year**|all]\n!bestsellers [week|month|**year**|all]\n!mostdeadlyfor player_name\n!statfor player_name [week|month|**year**|all]\n!victimsof mobile_name\n!epichistory epic_name\n";
+		let message = "I know following commands:\n!topdeaths [week|month|**year**|all]\n!topraisers [week|month|**year**|all]\n!bestleaders [week|month|**year**|all]\n!topmerchants [week|month|**year**|all]\n!topmerchants2 [week|month|**year**|all]\n!top [week|month|**year**|all]\n!mostdeadly [week|month|**year**|all]\n!gamestats [week|month|**year**|all]\n!bestsellers [week|month|**year**|all]\n!mostdeadlyfor player_name\n!statfor player_name [week|month|**year**|all]\n!victimsof mobile_name\n!epichistory epic_name\n";
 
 		this.logInfo(message);
 		Utility.sendMessage(channel, message);
@@ -539,7 +563,10 @@ export class Main {
 				this.fetchBestSellers(channel, period);
 			} else if (command == "topmerchants") {
 				let period = this.getPeriod(parts);
-				this.fetchTopMerchants(channel, period);
+				this.fetchTopMerchants(channel, period, false);
+			} else if (command == "topmerchants2") {
+				let period = this.getPeriod(parts);
+				this.fetchTopMerchants(channel, period, true);
 			} else if (command == "bestleaders") {
 				let period = this.getPeriod(parts);
 				this.fetchBestLeaders(channel, period);

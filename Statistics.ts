@@ -1129,7 +1129,7 @@ export class Statistics {
 		}
 	}
 
-	public static async fetchTopMerchants(period: PeriodType): Promise<MerchantsInfo> {
+	public static async fetchTopMerchants(period: PeriodType, orderBySum: boolean): Promise<MerchantsInfo> {
 		let connection: Database = null;
 
 		try {
@@ -1149,7 +1149,9 @@ export class Statistics {
 				merchants: []
 			};
 
-			let cmd = `SELECT seller, COUNT(seller) as c, SUM(price) as s FROM sales ${periodFilter} GROUP BY seller ORDER BY c DESC LIMIT 10`;
+			let orderBy = orderBySum ? "s" : "c";
+
+			let cmd = `SELECT seller, COUNT(seller) as c, SUM(price) as s FROM sales ${periodFilter} GROUP BY seller ORDER BY ${orderBy} DESC LIMIT 10`;
 			let data = await connection.all(cmd);
 			for (let i = 0; i < data.length; ++i) {
 				let row = data[i];
