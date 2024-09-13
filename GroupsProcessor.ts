@@ -73,6 +73,14 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 		await this.makeChannelWhite();
 	}
 
+	protected onAbortRequest(): void {
+		if (Main.instance.epicsProcessor.xhr != null)
+		{
+			this.logInfo(`Trying to abort the emporium http request...`);
+			Main.instance.epicsProcessor.xhr.abort();
+		}
+	}
+
 	async internalProcess(): Promise<void> {
 		this.defeatedEpics = false;
 

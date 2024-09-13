@@ -1085,15 +1085,10 @@ export class Statistics {
 		try {
 			connection = await this.openDb();
 
-			let start = 0;
-			let end = 0;
-			let periodFilter = "";
+			let [start, end] = await this.getStartEnd(connection, period);
 
-			if (period == PeriodType.AllTime) {
-				[start, end] = await this.fetchStartEndFromAlerts(connection);
-			} else {
-				start = this.buildPeriodFilter(period);
-				end = Utility.getUnixTimeStamp();
+			let periodFilter = "";
+			if (period != PeriodType.AllTime) {
 				periodFilter = `WHERE timeStamp >= ${start} AND timeStamp <= ${end}`;
 			}
 

@@ -9,7 +9,7 @@ const fs = require('fs');
 export abstract class BaseProcessor {
 	private readonly loggerWrapper: LoggerWrapper;
 	private processStarted: number = null;
-	private xhr: XMLHttpRequest;
+	public xhr: XMLHttpRequest;
 
 	constructor() {
 		this.loggerWrapper = new LoggerWrapper(this.getLoggerName());
@@ -74,6 +74,9 @@ export abstract class BaseProcessor {
 		});
 	}
 
+	protected onAbortRequest(): void {
+	}
+
 	private processWithFlag(): void {
 		if (this.processStarted != null) {
 			let diff = new Date().getTime() - this.processStarted;
@@ -84,6 +87,9 @@ export abstract class BaseProcessor {
 				this.logInfo(`Trying to abort the http request...`);
 				this.xhr.abort();
 			}
+
+			this.onAbortRequest();
+
 			return;
 		}
 
