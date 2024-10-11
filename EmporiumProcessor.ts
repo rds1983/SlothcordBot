@@ -196,7 +196,15 @@ export class EmporiumProcessor extends BaseProcessorImpl<{ [seller: string]: Auc
 							let minutesLeft = this.convertEndsToMinutes(item.ends);
 							if (minutesLeft > 0 && minutesLeft <= 120 && !item.lastWarning) {
 								let link = EmporiumProcessor.buildItemLink(item.name);
-								await this.sendMessage(`The auction for ${seller}'s item '${link}' will end in less than two hours.`);
+
+								let message = `The auction for ${seller}'s item '${link}' will end in less than two hours. `;
+								if (item.bidder != "Nobody") {
+									message += `The highest bid ${item.price} was placed by ${item.bidder}.`
+								} else {
+									message += `No one placed a bid on that item.`;
+								}
+
+								await this.sendMessage(message);
 								item.lastWarning = true;
 							}
 

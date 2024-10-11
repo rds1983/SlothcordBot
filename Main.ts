@@ -45,29 +45,31 @@ export class Main {
 		this.loggerWrapper.logInfo(message);
 	}
 
-	formatPlaceWithMedal(place: number): string {
+	formatPlaceWithMedal(place: number, addMedal: boolean): string {
 		if (place == null) {
 			return "";
 		}
 
 		let result = `${place + 1}. `;
 
-		switch (place) {
-			case 0:
-				result += ":first_place: ";
-				break;
+		if (addMedal) {
+			switch (place) {
+				case 0:
+					result += ":first_place: ";
+					break;
 
-			case 1:
-				result += ":second_place: ";
-				break;
+				case 1:
+					result += ":second_place: ";
+					break;
 
-			case 2:
-				result += ":third_place: ";
-				break;
+				case 2:
+					result += ":third_place: ";
+					break;
+			}
 		}
 
 		return result;
-	}	
+	}
 
 	async fetchTopDeathsAsync(channel: TextChannel, period: PeriodType): Promise<void> {
 		let topDeaths = await Statistics.fetchTopDeaths(period);
@@ -77,7 +79,7 @@ export class Main {
 		for (let i = 0; i < topDeaths.players.length && i < this.RatingMaximum; ++i) {
 			let pd = topDeaths.players[i];
 			let raiseRate = Math.round(pd.raises * 100.0 / pd.count);
-			message += `${this.formatPlaceWithMedal(i)}${pd.name} died ${pd.count} times. Was raised ${pd.raises} times (${raiseRate}%).\n`;
+			message += `${this.formatPlaceWithMedal(i, true)}${pd.name} died ${pd.count} times. Was raised ${pd.raises} times (${raiseRate}%).\n`;
 		}
 
 		this.logInfo(message);
@@ -96,7 +98,7 @@ export class Main {
 		for (let i = 0; i < mostDeadly.deadlies.length && i < this.RatingMaximum; ++i) {
 			let d = mostDeadly.deadlies[i];
 			let raiseRate = Math.round(d.raises * 100.0 / d.count);
-			message += `${this.formatPlaceWithMedal(i)}${d.name} killed ${d.count} times. Raised ${d.raises} times (${raiseRate}%).\n`;
+			message += `${this.formatPlaceWithMedal(i, true)}${d.name} killed ${d.count} times. Raised ${d.raises} times (${raiseRate}%).\n`;
 		}
 
 		this.logInfo(message);
@@ -114,7 +116,7 @@ export class Main {
 
 		for (let i = 0; i < mostDeadly.deadlies.length && i < this.RatingMaximum; ++i) {
 			let d = mostDeadly.deadlies[i];
-			message += `${this.formatPlaceWithMedal(i)}${d.name} killed you ${d.count} times.\n`;
+			message += `${this.formatPlaceWithMedal(i, false)}${d.name} killed you ${d.count} times.\n`;
 		}
 
 		this.logInfo(message);
@@ -137,7 +139,7 @@ export class Main {
 
 			for (let i = 0; i < victimsOf.deadlies.length && i < this.RatingMaximum; ++i) {
 				let d = victimsOf.deadlies[i];
-				message += `${this.formatPlaceWithMedal(i)}Killed ${d.name} ${d.count} times.\n`;
+				message += `${this.formatPlaceWithMedal(i, false)}Killed ${d.name} ${d.count} times.\n`;
 			}
 		}
 
@@ -207,7 +209,7 @@ export class Main {
 		}
 
 		return result;
-	}	
+	}
 
 	async fetchStatForAsync(channel: TextChannel, character: string, period: PeriodType): Promise<void> {
 		let statFor = await Statistics.fetchStatFor(character, period);
@@ -249,7 +251,7 @@ export class Main {
 
 		for (let i = 0; i < topRaisers.raisers.length && i < this.RatingMaximum; ++i) {
 			let d = topRaisers.raisers[i];
-			message += `${this.formatPlaceWithMedal(i)}${d.name} raised ${d.count} times.\n`;
+			message += `${this.formatPlaceWithMedal(i, true)}${d.name} raised ${d.count} times.\n`;
 		}
 
 		this.logInfo(message);
@@ -269,7 +271,7 @@ export class Main {
 			let d = bestLeaders.leaders[i];
 			let roundedSize = Math.round(d.totalSize / d.groupsCount);
 
-			message += `${this.formatPlaceWithMedal(i)}${d.name} led ${d.realGroupsCount} groups. Average group size was ${roundedSize}. Overall score is ${Utility.formatNumber(d.score)}.\n`;
+			message += `${this.formatPlaceWithMedal(i, true)}${d.name} led ${d.realGroupsCount} groups. Average group size was ${roundedSize}. Overall score is ${Utility.formatNumber(d.score)}.\n`;
 		}
 
 		this.logInfo(message);
@@ -307,7 +309,7 @@ export class Main {
 			let d = bestSellers.sales[i];
 			let roundedSize = Math.round(d.sum / d.count);
 
-			message += `${this.formatPlaceWithMedal(i)}${EmporiumProcessor.buildItemLink(d.item)} was sold ${d.count} times. Average price was ${Utility.formatNumber(roundedSize)}.\n`;
+			message += `${this.formatPlaceWithMedal(i, false)}${EmporiumProcessor.buildItemLink(d.item)} was sold ${d.count} times. Average price was ${Utility.formatNumber(roundedSize)}.\n`;
 		}
 
 		this.logInfo(message);
@@ -326,7 +328,7 @@ export class Main {
 		for (let i = 0; i < topMerchants.merchants.length && i < this.RatingMaximum; ++i) {
 			let d = topMerchants.merchants[i];
 
-			message += `${this.formatPlaceWithMedal(i)}${d.name} sold ${d.count} items for the total amount of ${Utility.formatNumber(d.sum)} gold.\n`;
+			message += `${this.formatPlaceWithMedal(i, true)}${d.name} sold ${d.count} items for the total amount of ${Utility.formatNumber(d.sum)} gold.\n`;
 		}
 
 		this.logInfo(message);
@@ -426,7 +428,7 @@ export class Main {
 			value += `> Total Score: ${d.score}\n`;
 
 			embed.addFields({
-				name: `${this.formatPlaceWithMedal(i)}${d.name}`,
+				name: `${this.formatPlaceWithMedal(i, false)}${d.name}`,
 				value: value
 			});
 		}
