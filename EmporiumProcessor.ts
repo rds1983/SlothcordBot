@@ -12,8 +12,7 @@ class Auction {
 	lastWarning: boolean;
 }
 
-export class EmporiumProcessor extends BaseProcessorImpl<{ [seller: string]: Auction[] }>
-{
+export class EmporiumProcessor extends BaseProcessorImpl<{ [seller: string]: Auction[] }> {
 	getName(): string {
 		return "emporium";
 	}
@@ -197,11 +196,9 @@ export class EmporiumProcessor extends BaseProcessorImpl<{ [seller: string]: Auc
 							if (minutesLeft > 0 && minutesLeft <= 120 && !item.lastWarning) {
 								let link = EmporiumProcessor.buildItemLink(item.name);
 
-								let message = `The auction for ${seller}'s item '${link}' will end in less than two hours. `;
+								let message = `The auction for ${seller}'s item '${link}' will end in less than two hours.`;
 								if (item.bidder != "Nobody") {
-									message += `The highest bid ${item.price} was placed by ${item.bidder}.`
-								} else {
-									message += `No one placed a bid on that item.`;
+									message += ` The highest bid ${item.price} was placed by ${item.bidder}.`
 								}
 
 								await this.sendMessage(message);
