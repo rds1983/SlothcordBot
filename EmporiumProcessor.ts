@@ -2,6 +2,7 @@ import { JSDOM } from "jsdom";
 import { BaseProcessorImpl } from "./BaseProcessor";
 import { Utility } from "./Utility";
 import { Statistics } from "./Statistics";
+import { Constants } from "./Constants";
 
 class Auction {
 	name: string;
@@ -85,7 +86,7 @@ export class EmporiumProcessor extends BaseProcessorImpl<{ [seller: string]: Auc
 	async internalProcess(): Promise<void> {
 		this.logInfo("Checking auctions...");
 
-		let data = await this.loadPage("http://www.slothmud.org/wp/live-info/live-auctions");
+		let data = await this.loadPage(Constants.EmporiumUrl);
 
 		const dom = new JSDOM(data);
 		let document = dom.window.document;

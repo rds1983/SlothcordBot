@@ -1,6 +1,7 @@
 import { JSDOM } from "jsdom";
 import { BaseProcessorImpl } from "./BaseProcessor";
 import { Utility } from "./Utility";
+import { Constants } from "./Constants";
 
 global.HTMLAnchorElement = require("xhr2");
 
@@ -28,7 +29,7 @@ export class ForumProcessor extends BaseProcessorImpl<Post[]>
 	async internalProcess(): Promise<void> {
 		this.logInfo("Checking forum...");
 
-		let data = await this.loadPage("http://www.slothmud.org/wp/");
+		let data = await this.loadPage(Constants.ForumUrl);
 		const dom = new JSDOM(data);
 		let document = dom.window.document;
 

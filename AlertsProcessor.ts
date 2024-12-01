@@ -3,6 +3,7 @@ import { JSDOM } from "jsdom";
 import { BaseProcessorImpl } from "./BaseProcessor";
 import { Global } from "./Global";
 import { Statistics } from "./Statistics";
+import { Constants } from "./Constants";
 
 enum EventType {
 	Death,
@@ -168,7 +169,7 @@ export class AlertsProcessor extends BaseProcessorImpl<Event[]>
 	async internalProcess(): Promise<void> {
 		this.logInfo("Checking alerts...");
 
-		let data = await this.loadPage("http://www.slothmud.org/wp/live-info/live-blog");
+		let data = await this.loadPage(Constants.AlertsUrl);
 		let dom = new JSDOM(data);
 		let document = dom.window.document;
 

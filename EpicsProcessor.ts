@@ -3,6 +3,7 @@ import { JSDOM } from "jsdom";
 import { BaseProcessorImpl } from "./BaseProcessor";
 import { Statistics } from "./Statistics";
 import { Main } from "./Main";
+import { Constants } from "./Constants";
 
 class Epic {
 	name: string;
@@ -31,7 +32,7 @@ export class EpicsProcessor extends BaseProcessorImpl<Epic[]>
 	async internalProcess(): Promise<void> {
 		this.logInfo("Checking epics...");
 
-		let data = await this.loadPage("http://www.slothmud.org/support/mapserver2.php?filter=all");
+		let data = await this.loadPage(Constants.EpicsUrl);
 		let dom = new JSDOM(data);
 		let document = dom.window.document;
 

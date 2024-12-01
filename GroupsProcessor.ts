@@ -4,6 +4,7 @@ import { Utility } from "./Utility";
 import { JSDOM } from 'jsdom';
 import { GroupInfo, Statistics } from "./Statistics";
 import { Main } from "./Main";
+import { Constants } from "./Constants";
 
 class Group {
 	leader: string;
@@ -92,7 +93,7 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 			await Main.instance.epicsProcessor.internalProcess();
 		}
 
-		let data = await this.loadPage("http://www.slothmud.org/wp/live-info/adventuring-parties");
+		let data = await this.loadPage(Constants.GroupsUrl);
 		let dom = new JSDOM(data);
 		let document = dom.window.document;
 
