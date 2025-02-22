@@ -370,7 +370,7 @@ export class Main {
 		}
 
 		if (name != null) {
-			result += `${name} - `;
+			result += `${name} `;
 		}
 
 		result += `${this.formatPlace(place)} (${(10 - place) * k})`;
