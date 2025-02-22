@@ -358,12 +358,22 @@ export class Main {
 		return stat;
 	}
 
-	formatPlace2(header: string, place: number, k = 1): string {
+	formatPlace2(result: string, place: number, name: string, k = 1): string {
 		if (place == null) {
-			return "";
+			return result;
 		}
 
-		let result = `> ${header}: ${this.formatPlace(place)} (Score: ${(10 - place) * k})\n`;
+		if (result != null) {
+			result += ", ";
+		} else {
+			result = "";
+		}
+
+		if (name != null) {
+			result += `${name} - `;
+		}
+
+		result += `${this.formatPlace(place)} (${(10 - place) * k})`;
 
 		return result;
 	}
@@ -415,20 +425,74 @@ export class Main {
 
 		const embed = new EmbedBuilder().setDescription(message);
 
-		for (let i = 0; i < sortedArray.length && i < this.RatingMaximum; ++i) {
-			let d = sortedArray[i][1];
+		let j = 0;
+		for (let i = 0; i < this.RatingMaximum; ++i) {
+			// Gather all adventurers with similar score
+			let players: TopStatInfo[] = [];
+
+			for (; j < sortableArray.length; ++j) {
+				let p = sortedArray[j][1];
+				if (players.length == 0 || players[0].score == p.score) {
+					players.push(p);
+				} else if (players[0].score > p.score) {
+					break;
+				}
+			}
+
+			if (players.length == 0) {
+				// No more records
+				break;
+			}
+
+			let score = players[0].score;
+
+			let name = this.formatPlaceWithMedal(i, false);
+
+			let leadersString: string = null;
+			let raisersString: string = null;
+			let merchantsString: string = null;
+			let deathsString: string = null;
+			for (let k = 0; k < players.length; ++k) {
+				let d = players[k];
+
+				name += d.name;
+				if (k < players.length - 1) {
+					name += ", ";
+				}
+
+				let formatName: string = null;
+				if (players.length > 1) {
+					formatName = d.name;
+				}
+
+				leadersString = this.formatPlace2(leadersString, d.leadersPlace, formatName, 2);
+				raisersString = this.formatPlace2(raisersString, d.raisersPlace, formatName);
+				merchantsString = this.formatPlace2(merchantsString, d.merchantsPlace, formatName);
+				deathsString = this.formatPlace2(deathsString, d.deathsPlace, formatName);
+			}
+
+			name += ` (${score})`;
 
 			let value = "";
 
-			value += this.formatPlace2("Deaths", d.deathsPlace);
-			value += this.formatPlace2("Raisers", d.raisersPlace);
-			value += this.formatPlace2("Leaders", d.leadersPlace, 2);
-			value += this.formatPlace2("Merchants", d.merchantsPlace);
+			if (leadersString != null) {
+				value += `Leaders: ${leadersString}\n`;
+			}
 
-			value += `> Total Score: ${d.score}\n`;
+			if (raisersString != null) {
+				value += `Raisers: ${raisersString}\n`;
+			}
+
+			if (merchantsString != null) {
+				value += `Merchants: ${merchantsString}\n`;
+			}
+
+			if (deathsString != null) {
+				value += `Deaths: ${deathsString}\n`;
+			}
 
 			embed.addFields({
-				name: `${this.formatPlaceWithMedal(i, false)}${d.name}`,
+				name: name,
 				value: value
 			});
 		}
