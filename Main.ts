@@ -476,19 +476,19 @@ export class Main {
 			let value = "";
 
 			if (leadersString != null) {
-				value += `Leaders: ${leadersString}\n`;
+				value += `> Leaders: ${leadersString}\n`;
 			}
 
 			if (raisersString != null) {
-				value += `Raisers: ${raisersString}\n`;
+				value += `> Raisers: ${raisersString}\n`;
 			}
 
 			if (merchantsString != null) {
-				value += `Merchants: ${merchantsString}\n`;
+				value += `> Merchants: ${merchantsString}\n`;
 			}
 
 			if (deathsString != null) {
-				value += `Deaths: ${deathsString}\n`;
+				value += `> Deaths: ${deathsString}\n`;
 			}
 
 			embed.addFields({
