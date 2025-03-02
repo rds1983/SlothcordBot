@@ -378,6 +378,27 @@ export class Main {
 		return result;
 	}
 
+	buildTopString(players: TopStatInfo[], placeGetter: (a: TopStatInfo) => number, k = 1): string {
+		let result: string = null;
+
+		// Sort by place
+		players = players.sort((a, b) => placeGetter(a) - placeGetter(b));
+
+		for (let i = 0; i < players.length; ++i) {
+			let p = players[i];
+
+			let formatName: string = null;
+			if (players.length > 1) {
+				formatName = p.name;
+			}
+
+
+			result = this.formatPlace2(result, placeGetter(p), formatName, k);
+		}
+
+		return result;
+	}
+
 	async fetchTopAsync(channel: TextChannel, period: PeriodType): Promise<void> {
 		let deaths = await Statistics.fetchTopDeaths(period);
 		let raisers = await Statistics.fetchTopRaisers(period);
@@ -448,10 +469,6 @@ export class Main {
 
 			let name = this.formatPlaceWithMedal(i, false);
 
-			let leadersString: string = null;
-			let raisersString: string = null;
-			let merchantsString: string = null;
-			let deathsString: string = null;
 			for (let k = 0; k < players.length; ++k) {
 				let d = players[k];
 
@@ -459,34 +476,27 @@ export class Main {
 				if (k < players.length - 1) {
 					name += ", ";
 				}
-
-				let formatName: string = null;
-				if (players.length > 1) {
-					formatName = d.name;
-				}
-
-				leadersString = this.formatPlace2(leadersString, d.leadersPlace, formatName, 2);
-				raisersString = this.formatPlace2(raisersString, d.raisersPlace, formatName);
-				merchantsString = this.formatPlace2(merchantsString, d.merchantsPlace, formatName);
-				deathsString = this.formatPlace2(deathsString, d.deathsPlace, formatName);
 			}
 
 			name += ` (${score})`;
 
 			let value = "";
-
+			let leadersString = this.buildTopString(players, p => p.leadersPlace, 2);
 			if (leadersString != null) {
 				value += `> Leaders: ${leadersString}\n`;
 			}
 
+			let raisersString = this.buildTopString(players, p => p.raisersPlace);
 			if (raisersString != null) {
 				value += `> Raisers: ${raisersString}\n`;
 			}
 
+			let merchantsString = this.buildTopString(players, p => p.merchantsPlace);
 			if (merchantsString != null) {
 				value += `> Merchants: ${merchantsString}\n`;
 			}
 
+			let deathsString = this.buildTopString(players, p => p.deathsPlace);
 			if (deathsString != null) {
 				value += `> Deaths: ${deathsString}\n`;
 			}
