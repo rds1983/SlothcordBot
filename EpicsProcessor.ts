@@ -156,8 +156,11 @@ export class EpicsProcessor extends BaseProcessorImpl<Epic[]> {
 
 					result += `${continent}:\n`;
 
-					for (let i = 0; i < epicsGrouped[continent].length; ++i) {
-						let epic = epicsGrouped[continent][i];
+					let epicsSorted = epicsGrouped[continent];
+					epicsSorted.sort((a, b) => a.name.toLocaleLowerCase() > b.name.toLocaleLowerCase() ? 1 : -1);
+
+					for (let i = 0; i < epicsSorted.length; ++i) {
+						let epic = epicsSorted[i];
 						result += `- ${epic.name} at ${epic.area}\n`;
 					}
 				}
