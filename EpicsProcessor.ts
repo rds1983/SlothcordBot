@@ -157,6 +157,7 @@ export class EpicsProcessor extends BaseProcessorImpl<Epic[]>
 					}
 				}
 
+				result += `Total epics: ${newEpics.length}\n`;
 
 				// Fetch old messages
 				let messages = await this.channel.messages.fetch();
