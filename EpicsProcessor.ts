@@ -11,8 +11,9 @@ class Epic {
 	continent: string;
 }
 
-export class EpicsProcessor extends BaseProcessorImpl<Epic[]>
-{
+export class EpicsProcessor extends BaseProcessorImpl<Epic[]> {
+	private static continentOrder = ["Thordfalan", "Thule", "Niebelung", "The Island", "Lyme", "Euridyce", "Valkyre"];
+
 	constructor(client: Client) {
 		super(client);
 	}
@@ -138,17 +139,21 @@ export class EpicsProcessor extends BaseProcessorImpl<Epic[]>
 				let epicsGrouped: { [continent: string]: Epic[] } = {};
 				for (let i = 0; i < newEpics.length; ++i) {
 					let epic = newEpics[i];
-					if (!(epic.continent in epicsGrouped))
-					{
+					if (!(epic.continent in epicsGrouped)) {
 						epicsGrouped[epic.continent] = [];
 					}
 
 					epicsGrouped[epic.continent].push(epic);
 				}
 
-				// Build messsage
+				// Build message
 				let result = "";
-				for (let continent in epicsGrouped) {
+				for (let i = 0; i < EpicsProcessor.continentOrder.length; ++i) {
+					let continent = EpicsProcessor.continentOrder[i];
+					if (!(continent in epicsGrouped)) {
+						continue;
+					}
+
 					result += `${continent}:\n`;
 
 					for (let i = 0; i < epicsGrouped[continent].length; ++i) {
@@ -157,7 +162,7 @@ export class EpicsProcessor extends BaseProcessorImpl<Epic[]>
 					}
 				}
 
-				result += `Total epics: ${newEpics.length}\n`;
+				result += `\nTotal epics: ${newEpics.length}\n`;
 
 				// Fetch old messages
 				let messages = await this.channel.messages.fetch();
