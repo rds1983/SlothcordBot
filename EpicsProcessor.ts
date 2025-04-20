@@ -164,6 +164,7 @@ export class EpicsProcessor extends BaseProcessorImpl<Epic[]> {
 
 				let now = Utility.getUnixTimeStamp();
 				for (let i = 0; i < epicsSorted.length; ++i) {
+					let isNew = false;
 					let epic = epicsSorted[i];
 
 					let epicTime = "";
@@ -177,9 +178,17 @@ export class EpicsProcessor extends BaseProcessorImpl<Epic[]> {
 							epicTime = "just now"
 						}
 
+						isNew = passed < (30 * 60);
+
 						epicTime = " (" + epicTime + ") ";
 					}
-					result += `- ${epic.name} at ${epic.area}${epicTime}\n`;
+
+					let epicStr = `${epic.name} at ${epic.area}${epicTime}`;
+					if (isNew) {
+						epicStr = "**" + epicStr + "**";
+					}
+
+					result += `- ${epicStr}\n`;
 				}
 			}
 
