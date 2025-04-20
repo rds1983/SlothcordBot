@@ -86,20 +86,25 @@ export class Utility {
 
 		let days = Math.floor(value / (24 * 60 * 60));
 		if (days > 0) {
-			result += `${days}d `;
+			result += `${days}d`;
 		}
 
 		value -= (days * 24 * 60 * 60);
 
 		let hours = Math.floor(value / (60 * 60));
 		if (hours > 0) {
-			result += `${hours}h `;
+			if (result.length > 0) {
+				result += " ";
+			}
+			result += `${hours}h`;
 		}
 
 		value -= (hours * 60 * 60);
 
-		let minutes = Math.floor(value / 60);
-		result += `${minutes}m`;
+		if (days == 0 && hours == 0) {
+			let minutes = Math.floor(value / 60);
+			result += `${minutes}m`;
+		}
 
 		return result;
 	}

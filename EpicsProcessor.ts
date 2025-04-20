@@ -178,7 +178,7 @@ export class EpicsProcessor extends BaseProcessorImpl<Epic[]> {
 							epicTime = "just now"
 						}
 
-						isNew = passed < (30 * 60);
+						isNew = passed < (60 * 60);
 
 						epicTime = " (" + epicTime + ") ";
 					}
