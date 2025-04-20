@@ -4,11 +4,13 @@ import { BaseProcessorImpl } from "./BaseProcessor";
 import { Statistics } from "./Statistics";
 import { Main } from "./Main";
 import { Constants } from "./Constants";
+import { Utility } from "./Utility";
 
 class Epic {
 	name: string;
 	area: string;
 	continent: string;
+	spawned: number;
 }
 
 export class EpicsProcessor extends BaseProcessorImpl<Epic[]> {
@@ -66,7 +68,8 @@ export class EpicsProcessor extends BaseProcessorImpl<Epic[]> {
 			{
 				name: name,
 				area: area,
-				continent: continent
+				continent: continent,
+				spawned: null
 			}
 
 			newEpics.push(epic);
@@ -79,7 +82,6 @@ export class EpicsProcessor extends BaseProcessorImpl<Epic[]> {
 		}
 
 		try {
-			let changed = false;
 			if (this.status != null) {
 				// Report new epics
 				for (let i = 0; i < newEpics.length; ++i) {
@@ -89,6 +91,12 @@ export class EpicsProcessor extends BaseProcessorImpl<Epic[]> {
 						let oldEpic = this.status[j];
 
 						if (newEpic.name == oldEpic.name) {
+
+							if (oldEpic.spawned != null) {
+								newEpic.spawned = oldEpic.spawned;
+							} else {
+								newEpic.spawned = Utility.getUnixTimeStamp();
+							}
 							found = true;
 							break;
 						}
@@ -97,7 +105,7 @@ export class EpicsProcessor extends BaseProcessorImpl<Epic[]> {
 					if (!found) {
 						await Statistics.storeEpicSpawn(newEpic.name);
 
-						changed = true;
+						newEpic.spawned = Utility.getUnixTimeStamp();
 					}
 				}
 
@@ -126,63 +134,72 @@ export class EpicsProcessor extends BaseProcessorImpl<Epic[]> {
 						}
 
 						await Statistics.storeEpicKill(oldEpic.name, groupId);
-
-						changed = true;
 					}
 				}
-			} else {
-				changed = true;
 			}
 
-			if (changed) {
-				// Group epics by continents
-				let epicsGrouped: { [continent: string]: Epic[] } = {};
-				for (let i = 0; i < newEpics.length; ++i) {
-					let epic = newEpics[i];
-					if (!(epic.continent in epicsGrouped)) {
-						epicsGrouped[epic.continent] = [];
-					}
-
-					epicsGrouped[epic.continent].push(epic);
+			// Group epics by continents
+			let epicsGrouped: { [continent: string]: Epic[] } = {};
+			for (let i = 0; i < newEpics.length; ++i) {
+				let epic = newEpics[i];
+				if (!(epic.continent in epicsGrouped)) {
+					epicsGrouped[epic.continent] = [];
 				}
 
-				// Build message
-				let result = "";
-				for (let i = 0; i < EpicsProcessor.continentOrder.length; ++i) {
-					let continent = EpicsProcessor.continentOrder[i];
-					if (!(continent in epicsGrouped)) {
-						continue;
-					}
+				epicsGrouped[epic.continent].push(epic);
+			}
 
-					let epicsSorted = epicsGrouped[continent];
-					epicsSorted.sort((a, b) => a.name.toLocaleLowerCase() > b.name.toLocaleLowerCase() ? 1 : -1);
-
-					result += `${continent} (${epicsSorted.length}):\n`;
-
-					for (let i = 0; i < epicsSorted.length; ++i) {
-						let epic = epicsSorted[i];
-						result += `- ${epic.name} at ${epic.area}\n`;
-					}
+			// Build message
+			let result = "";
+			for (let i = 0; i < EpicsProcessor.continentOrder.length; ++i) {
+				let continent = EpicsProcessor.continentOrder[i];
+				if (!(continent in epicsGrouped)) {
+					continue;
 				}
 
-				result += `\nTotal epics: ${newEpics.length}\n`;
+				let epicsSorted = epicsGrouped[continent];
+				epicsSorted.sort((a, b) => a.name.toLocaleLowerCase() > b.name.toLocaleLowerCase() ? 1 : -1);
 
-				// Fetch old messages
-				let messages = await this.channel.messages.fetch();
-				let messagesArray = Array.from(messages.values());
+				result += `${continent} (${epicsSorted.length}):\n`;
 
-				// Post new messages with the epics' status
-				await this.sendMessage(result);
+				let now = Utility.getUnixTimeStamp();
+				for (let i = 0; i < epicsSorted.length; ++i) {
+					let epic = epicsSorted[i];
 
-				// Delete old messages
-				try {
-					for (let i = 0; i < messagesArray.length; ++i) {
-						await messagesArray[i].delete();
+					let epicTime = "";
+					if (epic.spawned != null) {
+						let passed = now - epic.spawned;
+
+						if (passed >= 60) {
+							// At least one minute passed since the spawn
+							epicTime = Utility.formatTimeSpan(passed);
+						} else {
+							epicTime = "just now"
+						}
+
+						epicTime = " (" + epicTime + ") ";
 					}
+					result += `- ${epic.name}${epicTime} at ${epic.area}\n`;
 				}
-				catch (err: any) {
-					this.logError(err);
+			}
+
+			result += `\nTotal epics: ${newEpics.length}\n`;
+
+			// Fetch old messages
+			let messages = await this.channel.messages.fetch();
+			let messagesArray = Array.from(messages.values());
+
+			// Post new messages with the epics' status
+			await this.sendMessage(result);
+
+			// Delete old messages
+			try {
+				for (let i = 0; i < messagesArray.length; ++i) {
+					await messagesArray[i].delete();
 				}
+			}
+			catch (err: any) {
+				this.logError(err);
 			}
 		}
 		catch (err) {

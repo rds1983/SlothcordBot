@@ -81,6 +81,29 @@ export class Utility {
 		return moment.unix(value).format("MMMM Do YYYY, HH:mm");
 	}
 
+	static formatTimeSpan(value: number) {
+		let result = "";
+
+		let days = Math.floor(value / (24 * 60 * 60));
+		if (days > 0) {
+			result += `${days}d `;
+		}
+
+		value -= (days * 24 * 60 * 60);
+
+		let hours = Math.floor(value / (60 * 60));
+		if (hours > 0) {
+			result += `${hours}h `;
+		}
+
+		value -= (hours * 60 * 60);
+
+		let minutes = Math.floor(value / 60);
+		result += `${minutes}m`;
+
+		return result;
+	}
+
 	static async sendEmbed(channel: TextChannel, message: EmbedBuilder): Promise<Message<true>> {
 		return channel.send({ embeds: [message] });
 	}
