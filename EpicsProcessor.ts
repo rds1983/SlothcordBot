@@ -179,7 +179,7 @@ export class EpicsProcessor extends BaseProcessorImpl<Epic[]> {
 
 						epicTime = " (" + epicTime + ") ";
 					}
-					result += `- ${epic.name}${epicTime} at ${epic.area}\n`;
+					result += `- ${epic.name} at ${epic.area}${epicTime}\n`;
 				}
 			}
 
