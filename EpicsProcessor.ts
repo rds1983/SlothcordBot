@@ -180,7 +180,7 @@ export class EpicsProcessor extends BaseProcessorImpl<Epic[]> {
 
 						isNew = passed < (60 * 60);
 
-						epicTime = " *" + epicTime + "*";
+						epicTime = ", *" + epicTime + "*";
 					}
 
 					let epicStr = `${epic.name} at ${epic.area}${epicTime}`;
