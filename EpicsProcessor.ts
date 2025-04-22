@@ -1,4 +1,4 @@
-import { Client } from "discord.js";
+import { Client, EmbedBuilder } from "discord.js";
 import { JSDOM } from "jsdom";
 import { BaseProcessorImpl } from "./BaseProcessor";
 import { Statistics } from "./Statistics";
@@ -198,17 +198,14 @@ export class EpicsProcessor extends BaseProcessorImpl<Epic[]> {
 			let messages = await this.channel.messages.fetch();
 			let messagesArray = Array.from(messages.values());
 
-			// Post new messages with the epics' status
-			await this.sendMessage(result);
+			if (messagesArray.length == 0) {
 
-			// Delete old messages
-			try {
-				for (let i = 0; i < messagesArray.length; ++i) {
-					await messagesArray[i].delete();
-				}
-			}
-			catch (err: any) {
-				this.logError(err);
+				// No existing messages, hence post a new one
+				await this.sendMessage(result);
+			} else {
+				// Just edit the first message
+				const embed = new EmbedBuilder().setDescription(result);
+				await messagesArray[0].edit({ embeds: [embed] });
 			}
 		}
 		catch (err) {
