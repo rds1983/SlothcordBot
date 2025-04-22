@@ -199,7 +199,6 @@ export class EpicsProcessor extends BaseProcessorImpl<Epic[]> {
 			let messagesArray = Array.from(messages.values());
 
 			if (messagesArray.length == 0) {
-
 				// No existing messages, hence post a new one
 				await this.sendMessage(result);
 			} else {
