@@ -61,6 +61,9 @@ export class EpicsProcessor extends BaseProcessorImpl<Epic[]> {
 			}
 
 			let name = div.textContent;
+			if (name.toLowerCase() == "a mindshredder warrior") {
+				continue;
+			}
 
 			this.logInfo(`${name}; ${area}; ${continent}`);
 
