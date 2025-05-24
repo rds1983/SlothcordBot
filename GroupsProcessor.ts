@@ -36,6 +36,39 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 		return 5 * 60 * 1000;
 	}
 
+	async fixMessage(leader: string): Promise<void> {
+		this.logInfo(`fixMessage for the group of ${leader}`);
+
+		// Find the group message
+		let groupMessage = await this.findMessage(`${leader} started`);
+
+		if (groupMessage == null) {
+			this.logInfo(`WARNING: could not find message for group of ${leader}`);
+			return;
+		} else {
+			this.logInfo(`Group message id: ${groupMessage.id}`);
+		}
+
+		let embed = groupMessage.embeds[0];
+
+		let desc = embed.description;
+		if (!desc.includes("Defeated a mindshredder warrior"))
+		{
+			// Doesn't need to be fixed
+			return;
+		}
+
+		let lines = desc.split('\n');
+		let filtered_lines = lines.filter(line => !/Defeated a mindshredder warrior/.test(line))
+		desc = filtered_lines.join('\n');
+
+		// Edit the group message
+		const newEmbed = new EmbedBuilder().setDescription(desc);
+		await groupMessage.edit({ embeds: [newEmbed] });
+
+		await this.makeChannelWhite();
+	}
+
 	async appendMessage(leader: string, append: string, started: number): Promise<void> {
 		this.logInfo(`appendAndReportMessage for the group of ${leader}: ${append}`);
 
@@ -225,6 +258,8 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 							await Statistics.storeGroupEnded(oldLeader);
 						}
 					}
+
+					await this.fixMessage(oldGroup.initialLeader);
 				}
 
 				// Update old groups with the leader changes
