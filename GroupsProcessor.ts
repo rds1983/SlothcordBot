@@ -36,7 +36,7 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 		return 5 * 60 * 1000;
 	}
 
-	async fixMessage(leader: string): Promise<void> {
+	async fixMessage(leader: string, lineToRemove: string): Promise<void> {
 		this.logInfo(`fixMessage for the group of ${leader}`);
 
 		// Find the group message
@@ -52,14 +52,13 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 		let embed = groupMessage.embeds[0];
 
 		let desc = embed.description;
-		if (!desc.includes("Defeated a mindshredder warrior"))
-		{
+		if (!desc.includes(lineToRemove)) {
 			// Doesn't need to be fixed
 			return;
 		}
 
 		let lines = desc.split('\n');
-		let filtered_lines = lines.filter(line => !/Defeated a mindshredder warrior/.test(line))
+		let filtered_lines = lines.filter(line => line.indexOf(lineToRemove) == -1);
 		desc = filtered_lines.join('\n');
 
 		// Edit the group message
@@ -108,8 +107,7 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 	}
 
 	protected onAbortRequest(): void {
-		if (Main.instance.epicsProcessor.xhr != null)
-		{
+		if (Main.instance.epicsProcessor.xhr != null) {
 			this.logInfo(`Trying to abort the emporium http request...`);
 			Main.instance.epicsProcessor.xhr.abort();
 		}
@@ -259,7 +257,7 @@ export class GroupsProcessor extends BaseProcessorImpl<{ [leader: string]: Group
 						}
 					}
 
-					await this.fixMessage(oldGroup.initialLeader);
+					// await this.fixMessage(oldGroup.initialLeader, "Defeated a mindshredder warrior");
 				}
 
 				// Update old groups with the leader changes

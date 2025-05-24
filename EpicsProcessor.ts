@@ -125,7 +125,7 @@ export class EpicsProcessor extends BaseProcessorImpl<Epic[]> {
 						}
 					}
 
-					if (!found &&  oldEpic.name.toLowerCase() != "a mindshredder warrior") {
+					if (!found) {
 						let groupId: number = null;
 						let currentGroup = await Statistics.getCurrentGroupInfo();
 						if (currentGroup != null) {
