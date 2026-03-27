@@ -2,6 +2,7 @@ import sqlite3 from 'sqlite3';
 import { Database, open } from 'sqlite';
 import { Utility } from "./Utility";
 import { LoggerWrapper } from "./LoggerWrapper";
+import exp from 'constants';
 
 enum EventType {
 	Death,
@@ -18,6 +19,12 @@ export enum PeriodType {
 	Month,
 	Year,
 	AllTime
+}
+
+export enum RatingType {
+	Deaths,
+	Raisers,
+	Leaders
 }
 
 export class BaseInfo {
@@ -88,6 +95,19 @@ export class EpicHistoryRecordInfo {
 export class EpicHistoryInfo {
 	public name: string;
 	public history: EpicHistoryRecordInfo[];
+}
+
+export class ChampionInfo {
+	public name: string;
+	public started: Date;
+	public finished: Date;
+
+	calculateDays(): number {
+		let diffMs = this.finished.getTime() - this.started.getTime(); // milliseconds
+		let diffDays = Math.floor(diffMs / 86400000); // days	
+
+		return diffDays;
+	}
 }
 
 class RealGroup {
@@ -435,6 +455,123 @@ export class Statistics {
 		}
 	}
 
+	public static async fetchChampions(rating: RatingType): Promise<ChampionInfo[]> {
+		let connection: Database = null;
+
+		try {
+			connection = await this.openDb();
+
+			// Load existing
+			let stored: { [date: number]: string } = {};
+			let ratingInt = Number(rating);
+			let cmd = `SELECT * FROM champions WHERE type=${ratingInt}`;
+			let data = await connection.all(cmd);
+
+			for (let i = 0; i < data.length; ++i) {
+				let row = data[i];
+
+				let date = new Date(row.year, row.month, row.day);
+				stored[Utility.toUnixTimeStamp(date)] = row.adventurer;
+			}
+
+			var endDate = new Date();
+			let beginDate = new Date(2023, 5, 1);
+			let date = new Date(beginDate);
+
+			let result: ChampionInfo[] = [];
+
+			while (date < endDate) {
+				let storedKey = Utility.toUnixTimeStamp(date);
+
+				let championName = "";
+				if (storedKey in stored) {
+					championName = stored[storedKey];
+				} else {
+					let startDate = new Date(date);
+					startDate.setFullYear(startDate.getFullYear() - 1);
+
+					let periodFilter = `AND timeStamp >= ${Utility.toUnixTimeStamp(startDate)} AND timeStamp <= ${Utility.toUnixTimeStamp(date)}`;
+					cmd = `SELECT adventurer, COUNT(adventurer) AS c FROM alerts WHERE type = 0 ${periodFilter} GROUP BY adventurer ORDER BY c DESC LIMIT 1`;
+					data = await connection.all(cmd);
+					let count = 0;
+					if (data.length > 0) {
+						championName = data[0].adventurer;
+						count = data[0].c;
+					}
+
+					// Insert into stored
+					cmd = `INSERT INTO champions(type, year, month, day, adventurer, count) VALUES(?, ?, ?, ?, ?, ?)`;
+					await connection.run(cmd, [ratingInt, date.getFullYear(), date.getMonth(), date.getDate(), championName, count]);
+				}
+
+				if (championName != "") {
+					if (result.length == 0) {
+						let champion: ChampionInfo = {
+							name: championName,
+							started: beginDate,
+							finished: new Date(date),
+							calculateDays: ChampionInfo.prototype.calculateDays
+						};
+
+						result.push(champion);
+					} else if (championName != result[result.length - 1].name) {
+						// New champion
+						let champion: ChampionInfo = {
+							name: championName,
+							started: new Date(date),
+							finished: new Date(date),
+							calculateDays: ChampionInfo.prototype.calculateDays
+						};
+
+						result.push(champion);
+					} else {
+						// Update finished
+						result[result.length - 1].finished = new Date(date);
+					}
+
+				}
+
+				date.setDate(date.getDate() + 1);
+			}
+
+			// Remove entries with small amount days
+			let result2: ChampionInfo[] = [];
+			for (let i = 0; i < result.length; ++i) {
+				let champion = result[i];
+				if (champion.calculateDays() >= 1) {
+					result2.push(champion);
+				}
+			}
+
+			// Merge results
+			result = [];
+			for (let i = 0; i < result2.length; ++i) {
+				let champion = result2[i];
+
+				let j = i;
+				for (; j < result2.length; ++j) {
+					champion.finished = result2[j].finished;
+
+					if (j < result2.length - 1 && result2[j + 1].name != result2[i].name) {
+						break;
+					}
+				}
+
+				i = j;
+
+				result.push(champion);
+			}
+
+			return result;
+		}
+		finally {
+			if (connection != null) {
+				await connection.close();
+			}
+		}
+
+	}
+
 	public static async fetchMostDeadly(period: PeriodType): Promise<MostDeadlyInfo> {
 		let connection: Database = null;
 
@@ -447,7 +584,6 @@ export class Statistics {
 			if (period != PeriodType.AllTime) {
 				periodFilter = `WHERE timeStamp >= ${start} AND timeStamp <= ${end}`;
 			}
-
 			let result: MostDeadlyInfo =
 			{
 				start: start,

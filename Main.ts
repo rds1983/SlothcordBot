@@ -5,9 +5,10 @@ import { EpicsProcessor } from "./EpicsProcessor";
 import { ForumProcessor } from "./ForumProcessor";
 import { Global } from "./Global";
 import { GroupsProcessor } from "./GroupsProcessor";
-import { EpicHistoryEventType, PeriodType, StatInfo, Statistics } from "./Statistics";
+import { EpicHistoryEventType, PeriodType, RatingType, StatInfo, Statistics } from "./Statistics";
 import { LoggerWrapper } from "./LoggerWrapper";
 import { Utility } from "./Utility";
+import moment from "moment";
 
 Global.config = require('./config.json');
 Global.usersToCharacters = require('./usersToCharacters.json');
@@ -88,6 +89,25 @@ export class Main {
 
 	fetchTopDeaths(channel: TextChannel, period: PeriodType): void {
 		this.fetchTopDeathsAsync(channel, period).catch(err => this.logError(err));
+	}
+
+	async fetchChampionsAsync(channel: TextChannel, rating: RatingType): Promise<void> {
+		let topChampions = await Statistics.fetchChampions(rating);
+
+		let message = `Top champions rating for ${RatingType[rating].toLowerCase()}.\n\n`;
+		
+		for (let i = 0; i < topChampions.length; ++i) {
+			let champion = topChampions[i];
+
+			message += `* ${champion.name}, ${moment(champion.started).format("MMMM Do YYYY")} - ${moment(champion.finished).format("MMMM Do YYYY")} (${champion.calculateDays()} days)\n`;
+		}
+
+		this.logInfo(message);
+		Utility.sendMessage(channel, message);
+	}
+
+	fetchChampions(channel: TextChannel, rating: RatingType): void {
+		this.fetchChampionsAsync(channel, rating).catch(err => this.logError(err));
 	}
 
 	async fetchMostDeadlyAsync(channel: TextChannel, period: PeriodType): Promise<void> {
@@ -597,8 +617,12 @@ export class Main {
 			if (command == "help") {
 				this.help(channel);
 			} else if (command == "topdeaths") {
-				let period = this.getPeriod(parts);
-				this.fetchTopDeaths(channel, period);
+				if (parts[1] == "champions") {
+					this.fetchChampions(channel, RatingType.Deaths);
+				} else {
+					let period = this.getPeriod(parts);
+					this.fetchTopDeaths(channel, period);
+				}
 			} else if (command == "mostdeadly") {
 				let period = this.getPeriod(parts);
 				this.fetchMostDeadly(channel, period);
