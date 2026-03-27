@@ -94,8 +94,8 @@ export class Main {
 	async fetchChampionsAsync(channel: TextChannel, rating: RatingType): Promise<void> {
 		let topChampions = await Statistics.fetchChampions(rating);
 
-		let message = `Top champions rating for ${RatingType[rating].toLowerCase()}.\n\n`;
-		
+		let message = `Champions history for ${RatingType[rating].toLowerCase()}.\n\n`;
+
 		for (let i = 0; i < topChampions.length; ++i) {
 			let champion = topChampions[i];
 
@@ -656,8 +656,12 @@ export class Main {
 				}
 			}
 			else if (command == "topraisers") {
-				let period = this.getPeriod(parts);
-				this.fetchTopRaisers(channel, period);
+				if (parts[1] == "champions") {
+					this.fetchChampions(channel, RatingType.Raisers);
+				} else {
+					let period = this.getPeriod(parts);
+					this.fetchTopRaisers(channel, period);
+				}
 			} else if (command == "bestsellers") {
 				let period = this.getPeriod(parts);
 				this.fetchBestSellers(channel, period);
