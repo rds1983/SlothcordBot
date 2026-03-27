@@ -101,6 +101,12 @@ export class ChampionInfo {
 	public started: Date;
 	public finished: Date;
 
+	constructor(name: string, started: Date, finished: Date) {
+		this.name = name;
+		this.started = started;
+		this.finished = finished;
+	}
+
 	calculateDays(): number {
 		let diffMs = this.finished.getTime() - this.started.getTime(); // milliseconds
 		let diffDays = Math.floor(diffMs / 86400000); // days	
@@ -1259,23 +1265,11 @@ export class Statistics {
 
 				if (championName != "") {
 					if (result.length == 0) {
-						let champion: ChampionInfo = {
-							name: championName,
-							started: beginDate,
-							finished: new Date(date),
-							calculateDays: ChampionInfo.prototype.calculateDays
-						};
-
+						let champion = new ChampionInfo(championName, beginDate, new Date(date));
 						result.push(champion);
 					} else if (championName != result[result.length - 1].name) {
 						// New champion
-						let champion: ChampionInfo = {
-							name: championName,
-							started: new Date(date),
-							finished: new Date(date),
-							calculateDays: ChampionInfo.prototype.calculateDays
-						};
-
+						let champion = new ChampionInfo(championName, new Date(date), new Date(date));
 						result.push(champion);
 					} else {
 						// Update finished
