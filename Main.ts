@@ -672,8 +672,12 @@ export class Main {
 				let period = this.getPeriod(parts);
 				this.fetchTopMerchants(channel, period, true);
 			} else if (command == "bestleaders") {
-				let period = this.getPeriod(parts);
-				this.fetchBestLeaders(channel, period);
+				if (parts[1] == "champions") {
+					this.fetchChampions(channel, RatingType.Leaders);
+				} else {
+					let period = this.getPeriod(parts);
+					this.fetchBestLeaders(channel, period);
+				}
 			} else if (command == "top") {
 				let period = this.getPeriod(parts);
 				this.fetchTop(channel, period);

@@ -851,11 +851,9 @@ export class Statistics {
 		}
 	}
 
-	private static async fetchRealGroups(connection: Database, period: PeriodType): Promise<RealGroupsInfo> {
-		let [start, end] = await this.getStartEnd(connection, period);
-
+	private static async fetchRealGroups(connection: Database, usePeriodFilter: boolean, start: number, end: number): Promise<RealGroupsInfo> {
 		let periodFilter = "";
-		if (period != PeriodType.AllTime) {
+		if (usePeriodFilter) {
 			periodFilter = `AND started >= ${start} AND finished <= ${end}`;
 		}
 
@@ -913,75 +911,82 @@ export class Statistics {
 		return result;
 	}
 
+	private static async fetchBestLeadersInternal(connection: Database, usePeriodFilter: boolean, start: number, end: number): Promise<BestLeadersInfo> {
+		// First run: group all data by real groups
+		let realGroups = await this.fetchRealGroups(connection, usePeriodFilter, start, end);
+
+		// Second run: build up statistics
+		let stats: { [leader: string]: LeaderInfo } = {};
+		for (let i = 0; i < realGroups.realGroups.length; ++i) {
+			let realGroup = realGroups.realGroups[i];
+			let leadersMask: { [leader: string]: boolean } = {};
+			for (let j = 0; j < realGroup.rows.length; ++j) {
+				let row = realGroup.rows[j];
+				let leaderInfo: LeaderInfo;
+
+				if (row.leader in stats) {
+					leaderInfo = stats[row.leader];
+				} else {
+					leaderInfo = new LeaderInfo();
+					leaderInfo.name = row.leader;
+					stats[row.leader] = leaderInfo;
+				}
+
+				if (!(row.leader in leadersMask)) {
+					leadersMask[row.leader] = true;
+					++leaderInfo.realGroupsCount;
+				}
+
+				++leaderInfo.groupsCount;
+				leaderInfo.totalSize += row.size;
+
+				let leadTimeInSeconds = row.finished - row.started;
+
+				// Single row leads should receive at least 30 mins of time to balance out website groups sync issues
+				let singleRowLead = false;
+				if (j < realGroup.rows.length - 1 && realGroup.rows[j + 1].leader != row.leader) {
+					singleRowLead = true;
+				} else if (j > 0 && j == realGroup.rows.length - 1 && realGroup.rows[j - 1].leader != row.leader) {
+					singleRowLead = true;
+				}
+
+				if (singleRowLead && leadTimeInSeconds < 30 * 60) {
+					leadTimeInSeconds = 30 * 60;
+				}
+
+				let score = Math.round(Math.sqrt(leadTimeInSeconds) * row.size);
+				leaderInfo.score += score;
+			}
+		}
+
+		// Sort by score
+		var sortableArray = Object.entries(stats);
+		var sortedArray = sortableArray.sort(([, a], [, b]) => b.score - a.score);
+
+		let result: BestLeadersInfo =
+		{
+			start: realGroups.start,
+			end: realGroups.end,
+			leaders: []
+		};
+
+		for (let i = 0; i < sortedArray.length; ++i) {
+			result.leaders.push(sortedArray[i][1]);
+		}
+
+		return result;
+	}
+
 	public static async fetchBestLeaders(period: PeriodType): Promise<BestLeadersInfo> {
 		let connection: Database = null;
 
 		try {
 			connection = await this.openDb();
 
+			let [start, end] = await this.getStartEnd(connection, period);
+
 			// First run: group all data by real groups
-			let realGroups = await this.fetchRealGroups(connection, period);
-
-			// Second run: build up statistics
-			let stats: { [leader: string]: LeaderInfo } = {};
-			for (let i = 0; i < realGroups.realGroups.length; ++i) {
-				let realGroup = realGroups.realGroups[i];
-				let leadersMask: { [leader: string]: boolean } = {};
-				for (let j = 0; j < realGroup.rows.length; ++j) {
-					let row = realGroup.rows[j];
-					let leaderInfo: LeaderInfo;
-
-					if (row.leader in stats) {
-						leaderInfo = stats[row.leader];
-					} else {
-						leaderInfo = new LeaderInfo();
-						leaderInfo.name = row.leader;
-						stats[row.leader] = leaderInfo;
-					}
-
-					if (!(row.leader in leadersMask)) {
-						leadersMask[row.leader] = true;
-						++leaderInfo.realGroupsCount;
-					}
-
-					++leaderInfo.groupsCount;
-					leaderInfo.totalSize += row.size;
-
-					let leadTimeInSeconds = row.finished - row.started;
-
-					// Single row leads should receive at least 30 mins of time to balance out website groups sync issues
-					let singleRowLead = false;
-					if (j < realGroup.rows.length - 1 && realGroup.rows[j + 1].leader != row.leader) {
-						singleRowLead = true;
-					} else if (j > 0 && j == realGroup.rows.length - 1 && realGroup.rows[j - 1].leader != row.leader) {
-						singleRowLead = true;
-					}
-
-					if (singleRowLead && leadTimeInSeconds < 30 * 60) {
-						leadTimeInSeconds = 30 * 60;
-					}
-
-					let score = Math.round(Math.sqrt(leadTimeInSeconds) * row.size);
-					leaderInfo.score += score;
-				}
-			}
-
-			// Sort by score
-			var sortableArray = Object.entries(stats);
-			var sortedArray = sortableArray.sort(([, a], [, b]) => b.score - a.score);
-
-			let result: BestLeadersInfo =
-			{
-				start: realGroups.start,
-				end: realGroups.end,
-				leaders: []
-			};
-
-			for (let i = 0; i < sortedArray.length; ++i) {
-				result.leaders.push(sortedArray[i][1]);
-			}
-
-			return result;
+			return this.fetchBestLeadersInternal(connection, period != PeriodType.AllTime, start, end);
 		}
 		finally {
 			if (connection != null) {
@@ -1056,7 +1061,7 @@ export class Statistics {
 
 			result.adventurersRaisesCount = data[0].c;
 
-			let realGroups = await this.fetchRealGroups(connection, period);
+			let realGroups = await this.fetchRealGroups(connection, period != PeriodType.AllTime, start, end);
 			if (period != PeriodType.AllTime) {
 				for (let i = 0; i < realGroups.realGroups.length; ++i) {
 					let realGroup = realGroups.realGroups[i];
@@ -1256,6 +1261,15 @@ export class Statistics {
 								break;
 							}
 						case RatingType.Leaders:
+							{
+								let leaders = await this.fetchBestLeadersInternal(connection, true, Utility.toUnixTimeStamp(startDate), Utility.toUnixTimeStamp(date));
+								if (leaders.leaders.length > 0) {
+									championName = leaders.leaders[0].name;
+									count = leaders.leaders[0].score;
+								}
+
+								break;
+							}
 					}
 
 					// Insert into stored
