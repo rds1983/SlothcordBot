@@ -1237,11 +1237,11 @@ export class Statistics {
 					startDate.setFullYear(startDate.getFullYear() - 1);
 
 					let count = 0;
-					let periodFilter = `AND timeStamp >= ${Utility.toUnixTimeStamp(startDate)} AND timeStamp <= ${Utility.toUnixTimeStamp(date)}`;
+					let periodFilter = `timeStamp >= ${Utility.toUnixTimeStamp(startDate)} AND timeStamp <= ${Utility.toUnixTimeStamp(date)}`;
 					switch (rating) {
 						case RatingType.Deaths:
 							{
-								cmd = `SELECT adventurer, COUNT(adventurer) AS c FROM alerts WHERE type = 0 ${periodFilter} GROUP BY adventurer ORDER BY c DESC LIMIT 1`;
+								cmd = `SELECT adventurer, COUNT(adventurer) AS c FROM alerts WHERE type = 0 AND ${periodFilter} GROUP BY adventurer ORDER BY c DESC LIMIT 1`;
 								data = await connection.all(cmd);
 								if (data.length > 0) {
 									championName = data[0].adventurer;
@@ -1252,7 +1252,7 @@ export class Statistics {
 							}
 						case RatingType.Raisers:
 							{
-								cmd = `SELECT doer, COUNT(doer) AS c FROM alerts WHERE type = 1 ${periodFilter} GROUP BY doer ORDER BY c DESC LIMIT 1`;
+								cmd = `SELECT doer, COUNT(doer) AS c FROM alerts WHERE type = 1 AND ${periodFilter} GROUP BY doer ORDER BY c DESC LIMIT 1`;
 								data = await connection.all(cmd);
 								if (data.length > 0) {
 									championName = data[0].doer;
@@ -1273,7 +1273,7 @@ export class Statistics {
 							}
 						case RatingType.Merchants:
 							{
-								cmd = `SELECT seller, COUNT(seller) AS c FROM sales WHERE timeStamp >= 0 ${periodFilter} GROUP BY seller ORDER BY c DESC LIMIT 1`;
+								cmd = `SELECT seller, COUNT(seller) AS c FROM sales WHERE ${periodFilter} GROUP BY seller ORDER BY c DESC LIMIT 1`;
 								data = await connection.all(cmd);
 								if (data.length > 0) {
 									championName = data[0].seller;
