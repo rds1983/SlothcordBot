@@ -23,7 +23,8 @@ export enum PeriodType {
 export enum RatingType {
 	Deaths,
 	Raisers,
-	Leaders
+	Leaders,
+	Merchants
 }
 
 export class BaseInfo {
@@ -1266,6 +1267,17 @@ export class Statistics {
 								if (leaders.leaders.length > 0) {
 									championName = leaders.leaders[0].name;
 									count = leaders.leaders[0].score;
+								}
+
+								break;
+							}
+						case RatingType.Merchants:
+							{
+								cmd = `SELECT seller, COUNT(seller) AS c FROM sales WHERE ${periodFilter} GROUP BY seller ORDER BY c DESC LIMIT 1`;
+								data = await connection.all(cmd);
+								if (data.length > 0) {
+									championName = data[0].seller;
+									count = data[0].c;
 								}
 
 								break;
