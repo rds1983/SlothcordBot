@@ -94,7 +94,9 @@ export class Main {
 	async fetchChampionsAsync(channel: TextChannel, rating: RatingType): Promise<void> {
 		let topChampions = await Statistics.fetchChampions(rating);
 
-		let message = `Champions history for ${RatingType[rating].toLowerCase()}.\n\n`;
+		let title = rating == RatingType.MerchantsSum ? "merchants (by sum)" : RatingType[rating].toLowerCase();
+
+		let message = `Champions history for ${title}.\n\n`;
 
 		for (let i = 0; i < topChampions.length; ++i) {
 			let champion = topChampions[i];
@@ -571,7 +573,7 @@ export class Main {
 	}
 
 	help(channel: TextChannel) {
-		let message = "I know following commands:\n!topdeaths [week|month|**year**|all|champions]\n!topraisers [week|month|**year**|all|champions]\n!bestleaders [week|month|**year**|all|champions]\n!topmerchants [week|month|**year**|all|champions]\n!topmerchants2 [week|month|**year**|all]\n!top [week|month|**year**|all]\n!mostdeadly [week|month|**year**|all]\n!gamestats [week|month|**year**|all]\n!bestsellers [week|month|**year**|all]\n!mostdeadlyfor player_name\n!statfor player_name [week|month|**year**|all]\n!victimsof mobile_name\n!epichistory epic_name\n";
+		let message = "I know following commands:\n!topdeaths [week|month|**year**|all|champions]\n!topraisers [week|month|**year**|all|champions]\n!bestleaders [week|month|**year**|all|champions]\n!topmerchants [week|month|**year**|all|champions]\n!topmerchants2 [week|month|**year**|all|champions]\n!top [week|month|**year**|all]\n!mostdeadly [week|month|**year**|all]\n!gamestats [week|month|**year**|all]\n!bestsellers [week|month|**year**|all]\n!mostdeadlyfor player_name\n!statfor player_name [week|month|**year**|all]\n!victimsof mobile_name\n!epichistory epic_name\n";
 
 		this.logInfo(message);
 		Utility.sendMessage(channel, message);
@@ -673,8 +675,12 @@ export class Main {
 					this.fetchTopMerchants(channel, period, false);
 				}
 			} else if (command == "topmerchants2") {
-				let period = this.getPeriod(parts);
-				this.fetchTopMerchants(channel, period, true);
+				if (parts[1] == "champions") {
+					this.fetchChampions(channel, RatingType.MerchantsSum);
+				} else {
+					let period = this.getPeriod(parts);
+					this.fetchTopMerchants(channel, period, true);
+				}
 			} else if (command == "bestleaders") {
 				if (parts[1] == "champions") {
 					this.fetchChampions(channel, RatingType.Leaders);

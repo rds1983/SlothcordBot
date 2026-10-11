@@ -24,7 +24,8 @@ export enum RatingType {
 	Deaths,
 	Raisers,
 	Leaders,
-	Merchants
+	Merchants,
+	MerchantsSum
 }
 
 export class BaseInfo {
@@ -1278,6 +1279,17 @@ export class Statistics {
 								if (data.length > 0) {
 									championName = data[0].seller;
 									count = data[0].c;
+								}
+
+								break;
+							}
+						case RatingType.MerchantsSum:
+							{
+								cmd = `SELECT seller, SUM(price) AS s FROM sales WHERE ${periodFilter} GROUP BY seller ORDER BY s DESC LIMIT 1`;
+								data = await connection.all(cmd);
+								if (data.length > 0) {
+									championName = data[0].seller;
+									count = data[0].s;
 								}
 
 								break;
