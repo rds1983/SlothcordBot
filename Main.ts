@@ -573,7 +573,7 @@ export class Main {
 	}
 
 	help(channel: TextChannel) {
-		let message = "I know following commands:\n!topdeaths [week|month|**year**|all|champions]\n!topraisers [week|month|**year**|all|champions]\n!bestleaders [week|month|**year**|all|champions]\n!topmerchants [week|month|**year**|all|champions]\n!topmerchants2 [week|month|**year**|all|champions]\n!top [week|month|**year**|all]\n!mostdeadly [week|month|**year**|all]\n!gamestats [week|month|**year**|all]\n!bestsellers [week|month|**year**|all]\n!mostdeadlyfor player_name\n!statfor player_name [week|month|**year**|all]\n!victimsof mobile_name\n!epichistory epic_name\n";
+		let message = "I know following commands:\n!topdeaths [week|month|**year**|all|champions]\n!topraisers [week|month|**year**|all|champions]\n!bestleaders [week|month|**year**|all|champions]\n!topmerchants [week|month|**year**|all|champions]\n!topmerchants2 [week|month|**year**|all|champions]\n!top [week|month|**year**|all]\n!mostdeadly [week|month|**year**|all|champions]\n!gamestats [week|month|**year**|all]\n!bestsellers [week|month|**year**|all]\n!mostdeadlyfor player_name\n!statfor player_name [week|month|**year**|all]\n!victimsof mobile_name\n!epichistory epic_name\n";
 
 		this.logInfo(message);
 		Utility.sendMessage(channel, message);
@@ -626,8 +626,12 @@ export class Main {
 					this.fetchTopDeaths(channel, period);
 				}
 			} else if (command == "mostdeadly") {
-				let period = this.getPeriod(parts);
-				this.fetchMostDeadly(channel, period);
+				if (parts[1] == "champions") {
+					this.fetchChampions(channel, RatingType.MostDeadly);
+				} else {
+					let period = this.getPeriod(parts);
+					this.fetchMostDeadly(channel, period);
+				}
 			}
 			else if (command.startsWith("mostdeadlyfor")) {
 				if (parts.length != 2) {

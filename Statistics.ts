@@ -25,7 +25,8 @@ export enum RatingType {
 	Raisers,
 	Leaders,
 	Merchants,
-	MerchantsSum
+	MerchantsSum,
+	MostDeadly
 }
 
 export class BaseInfo {
@@ -1290,6 +1291,17 @@ export class Statistics {
 								if (data.length > 0) {
 									championName = data[0].seller;
 									count = data[0].s;
+								}
+
+								break;
+							}
+						case RatingType.MostDeadly:
+							{
+								cmd = `SELECT doer, COUNT(doer) AS c FROM alerts WHERE type = 0 AND ${periodFilter} GROUP BY doer ORDER BY c DESC LIMIT 1`;
+								data = await connection.all(cmd);
+								if (data.length > 0) {
+									championName = data[0].doer;
+									count = data[0].c;
 								}
 
 								break;
