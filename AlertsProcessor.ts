@@ -116,13 +116,17 @@ export class AlertsProcessor extends BaseProcessorImpl<Event[]>
 		return false;
 	}
 
+	static getPlayerLink(player: string): string {
+		return `[${player}](http://www.slothmud.org/wp/live-info/player-statistics?pc=${player})`;
+	}
+
 	async reportDeath(event: Event): Promise<void> {
-		this.sendMessage(`${event.adventurer} was slain by ${event.doer}.`);
+		this.sendMessage(`${AlertsProcessor.getPlayerLink(event.adventurer)} was slain by ${AlertsProcessor.getPlayerLink(event.doer)}.`);
 	}
 
 	async reportRaise(adventurer: string, raiser: string): Promise<void> {
 		// Find the raise message
-		let raiseMessage = await this.findMessage(`${adventurer} was slain by`, ["Raised by", "Shocked."]);
+		let raiseMessage = await this.findMessage(`${AlertsProcessor.getPlayerLink(adventurer)} was slain by`, ["Raised by", "Shocked."]);
 		if (raiseMessage == null) {
 			this.logInfo(`WARNING: could not find death message of ${adventurer}`);
 			return;
@@ -134,7 +138,7 @@ export class AlertsProcessor extends BaseProcessorImpl<Event[]>
 
 		let desc = embed.description;
 
-		desc += `\nRaised by ${raiser}.`;
+		desc += `\nRaised by ${AlertsProcessor.getPlayerLink(raiser)}.`;
 
 		// Edit the group message
 		const newEmbed = new EmbedBuilder().setDescription(desc);
@@ -145,7 +149,7 @@ export class AlertsProcessor extends BaseProcessorImpl<Event[]>
 
 	async reportShock(adventurer: string): Promise<void> {
 		// Find the raise message
-		let raiseMessage = await this.findMessage(`${adventurer} was slain by`, ["Raised by", "Shocked."]);
+		let raiseMessage = await this.findMessage(`${AlertsProcessor.getPlayerLink(adventurer)} was slain by`, ["Raised by", "Shocked."]);
 		if (raiseMessage == null) {
 			this.logInfo(`WARNING: could not find death message of ${adventurer}`);
 			return;
