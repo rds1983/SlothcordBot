@@ -121,7 +121,7 @@ export class AlertsProcessor extends BaseProcessorImpl<Event[]>
 	}
 
 	async reportDeath(event: Event): Promise<void> {
-		this.sendMessage(`${AlertsProcessor.getPlayerLink(event.adventurer)} was slain by ${AlertsProcessor.getPlayerLink(event.doer)}.`);
+		this.sendMessage(`${AlertsProcessor.getPlayerLink(event.adventurer)} was slain by ${event.doer}.`);
 	}
 
 	async reportRaise(adventurer: string, raiser: string): Promise<void> {
